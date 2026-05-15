@@ -189,7 +189,9 @@ def derive_one(d, m):
         inc_30_60 = sum_safe(d, [f"B19001{i:03d}" for i in range(7, 12)])
         inc_60_100 = sum_safe(d, ["B19001012", "B19001013"])
         inc_100_150 = sum_safe(d, ["B19001014", "B19001015"])
-        inc_150p = sum_safe(d, ["B19001016", "B19001017"])
+        inc_150_200 = sum_safe(d, ["B19001016"])
+    inc_200p    = sum_safe(d, ["B19001017"])
+    inc_150p    = sum_safe(d, ["B19001016", "B19001017"])
         bach_plus = sum_safe(d, ["B15003022", "B15003023", "B15003024", "B15003025"])
         hs_only = sum_safe(d, ["B15003017", "B15003018"])
 
@@ -246,7 +248,9 @@ def derive_one(d, m):
             "pct_hh_30_60k": pct(inc_30_60, inc_hh),
             "pct_hh_60_100k": pct(inc_60_100, inc_hh),
             "pct_hh_100_150k": pct(inc_100_150, inc_hh),
-            "pct_hh_150kplus": pct(inc_150p, inc_hh),
+            "pct_hh_150kplus":  pct(inc_150p, inc_hh),
+        "pct_hh_150_200k":  pct(inc_150_200, inc_hh),
+        "pct_hh_200kplus":  pct(inc_200p, inc_hh),
             "pct_snap": pct(get(d, "B22010002"), snap_total),
 
             "households": hh,
@@ -334,6 +338,7 @@ def derive_one(d, m):
             # Income brackets — just the two tail brackets (most editorial weight)
             "pct_hh_under30k":  moe_pct(inc_u30,  inc_u30_moe,  inc_hh, get(m,"B19001001")),
             "pct_hh_150kplus":  moe_pct(inc_150p, inc_150p_moe, inc_hh, get(m,"B19001001")),
+        "pct_hh_200kplus":  moe_pct(inc_200p, get(m,"B19001017"), inc_hh, get(m,"B19001001")),
             # SNAP, tenure
             "pct_snap":             moe_pct(get(d,"B22010002"), get(m,"B22010002"), snap_total, get(m,"B22010001")),
             "pct_owner_occupied":   moe_pct(get(d,"B25003002"), get(m,"B25003002"), tenure, get(m,"B25003001")),
@@ -864,7 +869,11 @@ VARS = [
     ("Income & poverty", "pct_hh_100_150k", "Households $100k–$150k", "pct", "%",
      "Share of households earning $100,000 to $149,999."),
     ("Income & poverty", "pct_hh_150kplus", "Households $150k+", "pct", "%",
-     "Share of households earning $150,000 or more."),
+     "Share of households earning $150,000 or more (the union of the next two brackets)."),
+    ("Income & poverty", "pct_hh_150_200k", "Households $150k–$200k", "pct", "%",
+     "Share of households earning $150,000 to $199,999."),
+    ("Income & poverty", "pct_hh_200kplus", "Households $200k+", "pct", "%",
+     "Share of households earning $200,000 or more. This is the highest bracket ACS publishes at tract level — Census top-codes everything above $200k here. For dollar-precise distinctions among the very wealthy ($500k+, $1M+), tract-level data is not publicly available; the IRS Statistics of Income series breaks out higher bands but only at the ZIP-code level."),
     ("Income & poverty", "pct_snap", "Receiving SNAP", "pct", "%",
      "Share of households that received SNAP / food-stamp benefits in the past year."),
 
