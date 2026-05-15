@@ -203,7 +203,7 @@ def derive_one(d, m):
         veh_2     = get(d, "B08201004")
         veh_3     = get(d, "B08201005")
         veh_4plus = get(d, "B08201006")
-        veh_3plus = sum_safe(d, ["B08201005", "B08201006"])
+        veh_2plus = sum_safe(d, ["B08201004", "B08201005", "B08201006"])
         # Weighted average vehicles per household; use 4.5 as midpoint for the "4 or more" bucket.
         if veh_total and veh_total > 0 and all(v is not None for v in [veh_0, veh_1, veh_2, veh_3, veh_4plus]):
             avg_veh = (0*veh_0 + 1*veh_1 + 2*veh_2 + 3*veh_3 + 4.5*veh_4plus) / veh_total
@@ -276,7 +276,7 @@ def derive_one(d, m):
 
             # Vehicles (B08201 / B25044)
             "pct_no_vehicle":        pct(veh_0,     veh_total),
-            "pct_3plus_vehicles":    pct(veh_3plus, veh_total),
+            "pct_2plus_vehicles":    pct(veh_2plus, veh_total),
             "avg_vehicles_per_hh":   avg_veh,
             "pct_owner_no_vehicle":  pct(own_no_v,  own_total),
             "pct_renter_no_vehicle": pct(rent_no_v, rent_total),
@@ -355,7 +355,7 @@ def derive_one(d, m):
             "pct_no_internet": moe_pct(get(d,"B28002013"), get(m,"B28002013"), internet_total, get(m,"B28002001")),
             # Vehicles
             "pct_no_vehicle":        moe_pct(veh_0,     get(m,"B08201002"), veh_total,  get(m,"B08201001")),
-            "pct_3plus_vehicles":    moe_pct(veh_3plus, moe_sum([get(m,"B08201005"),get(m,"B08201006")]), veh_total, get(m,"B08201001")),
+            "pct_2plus_vehicles":    moe_pct(veh_2plus, moe_sum([get(m,"B08201004"),get(m,"B08201005"),get(m,"B08201006")]), veh_total, get(m,"B08201001")),
             "pct_owner_no_vehicle":  moe_pct(own_no_v,  get(m,"B25044003"), own_total,  get(m,"B25044002")),
             "pct_renter_no_vehicle": moe_pct(rent_no_v, get(m,"B25044010"), rent_total, get(m,"B25044009")),
             # Schools
@@ -917,8 +917,8 @@ VARS = [
     # --- 11. Vehicles — pairs naturally with commute ---
     ("Vehicles", "pct_no_vehicle", "Households with no vehicle", "pct", "%",
      "Share of households that have no vehicle available."),
-    ("Vehicles", "pct_3plus_vehicles", "Households with 3+ vehicles", "pct", "%",
-     "Share of households with three or more vehicles available."),
+    ("Vehicles", "pct_2plus_vehicles", "Households with 2+ vehicles", "pct", "%",
+     "Share of households with two or more vehicles available."),
     ("Vehicles", "avg_vehicles_per_hh", "Average vehicles per household", "num2", "vehicles",
      "Average number of vehicles per household (the \"4 or more\" bucket is counted as 4.5)."),
     ("Vehicles", "pct_owner_no_vehicle", "Homeowners without a vehicle", "pct", "%",
