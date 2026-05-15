@@ -72,10 +72,57 @@
   .meta-card .src { color: var(--muted); font-size: 11.5px; margin-top: 6px; }
   .meta-card .story { font-size: 12.5px; color: var(--ink-2); line-height: 1.45; margin-top: 8px; border-top: 1px solid var(--rule); padding-top: 8px; }
 
+  /* Variable filter input */
+  #var-filter-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--panel);
+    padding: 4px 0 8px;
+    margin-bottom: 4px;
+  }
+  #var-filter {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 7px 28px 7px 10px;
+    font: inherit; font-size: 13px;
+    background: var(--paper);
+    color: var(--ink);
+    outline: none;
+  }
+  #var-filter:focus { border-color: var(--ink); background: #fff; }
+  #var-filter-clear {
+    position: absolute;
+    right: 6px; top: 8px;
+    width: 22px; height: 22px;
+    border: 0; background: transparent;
+    color: var(--muted); font-size: 15px; cursor: pointer;
+    border-radius: 4px;
+    display: none;
+  }
+  #var-filter-clear:hover { background: var(--bg); color: var(--ink); }
+  #var-filter-wrap.has-text #var-filter-clear { display: block; }
+  #var-empty {
+    font-size: 12px; color: var(--muted);
+    padding: 8px 4px;
+    display: none;
+  }
+
   /* Single-var picker */
+  .var-group { margin-bottom: 2px; }
+  .var-group.hidden { display: none; }
   .var-group-title {
+    position: sticky;
+    top: 42px; /* sits just under #var-filter-wrap */
+    z-index: 4;
+    background: var(--panel);
     font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
-    color: var(--ink-2); font-weight: 600; margin: 12px 0 4px;
+    color: var(--ink-2); font-weight: 600;
+    margin: 0;
+    padding: 8px 0 4px;
+    border-bottom: 1px solid var(--rule);
   }
   .var-btn {
     display: block; width: 100%; text-align: left;
@@ -85,6 +132,8 @@
   }
   .var-btn:hover { background: var(--paper); }
   .var-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .var-btn.hidden { display: none; }
+  .var-btn .hl { background: #fff59d; padding: 0 1px; border-radius: 2px; }
 
   /* Scale toggle */
   #scale-toggle { display: flex; gap: 4px; margin-top: 10px; font-size: 11.5px; }
@@ -322,7 +371,12 @@
 
     <!-- Single-var picker -->
     <div id="single-pane">
-      <div class="section-label">Variable</div>
+      <div class="section-label" style="margin-bottom:4px">Variable</div>
+      <div id="var-filter-wrap" style="position:relative">
+        <input id="var-filter" type="search" placeholder="Filter 45 variables… (try “rent”, “kids”, “crime”)" autocomplete="off" spellcheck="false">
+        <button id="var-filter-clear" title="Clear">×</button>
+      </div>
+      <div id="var-empty">No variables match that filter.</div>
       <div id="var-list"></div>
     </div>
 
@@ -624,9 +678,11 @@ function buildVarList() {
   VARS.forEach(v => { (groups[v.group] = groups[v.group] || []).push(v); });
   let html = "";
   Object.keys(groups).forEach(g => {
-    html += `<div class="var-group"><div class="var-group-title">${g}</div>`;
+    const gid = "g-" + g.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+    html += `<div class="var-group" data-group="${g}" id="${gid}"><div class="var-group-title">${g}</div>`;
     groups[g].forEach(v => {
-      html += `<button class="var-btn" data-key="${v.key}">${v.label}</button>`;
+      const search = (v.label + " " + v.group + " " + (v.desc || "")).toLowerCase();
+      html += `<button class="var-btn" data-key="${v.key}" data-search="${escapeAttr(search)}">${v.label}</button>`;
     });
     html += `</div>`;
   });
@@ -634,7 +690,51 @@ function buildVarList() {
   root.querySelectorAll(".var-btn").forEach(b => {
     b.addEventListener("click", () => setSingleVar(b.dataset.key));
   });
+
+  // Update filter placeholder with live count
+  const fi = document.getElementById("var-filter");
+  if (fi) fi.placeholder = `Filter ${VARS.length} variables… (try “rent”, “kids”, “crime”)`;
 }
+
+function escapeAttr(s) { return String(s).replace(/"/g, "&quot;"); }
+
+function filterVarList(query) {
+  const q = (query || "").trim().toLowerCase();
+  const list = document.getElementById("var-list");
+  const empty = document.getElementById("var-empty");
+  const wrap = document.getElementById("var-filter-wrap");
+  wrap.classList.toggle("has-text", q.length > 0);
+
+  let anyVisible = false;
+  list.querySelectorAll(".var-group").forEach(group => {
+    let groupHasMatch = false;
+    group.querySelectorAll(".var-btn").forEach(btn => {
+      const search = btn.dataset.search || "";
+      const match = !q || search.includes(q);
+      btn.classList.toggle("hidden", !match);
+      if (match) { groupHasMatch = true; anyVisible = true; }
+    });
+    group.classList.toggle("hidden", !groupHasMatch);
+  });
+  empty.style.display = anyVisible ? "none" : "block";
+}
+
+document.getElementById("var-filter").addEventListener("input", e => filterVarList(e.target.value));
+document.getElementById("var-filter").addEventListener("keydown", e => {
+  if (e.key === "Escape") { e.target.value = ""; filterVarList(""); }
+  if (e.key === "Enter") {
+    // Auto-select the first visible match
+    const first = document.querySelector(".var-btn:not(.hidden)");
+    if (first) {
+      setSingleVar(first.dataset.key);
+      first.scrollIntoView({ block: "nearest" });
+    }
+  }
+});
+document.getElementById("var-filter-clear").addEventListener("click", () => {
+  const fi = document.getElementById("var-filter");
+  fi.value = ""; filterVarList(""); fi.focus();
+});
 function setSingleActiveBtn() {
   document.querySelectorAll(".var-btn").forEach(b => {
     b.classList.toggle("active", b.dataset.key === currentKey);
