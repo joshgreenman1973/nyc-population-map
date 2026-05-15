@@ -123,10 +123,34 @@
   #legend .row { display: flex; align-items: center; gap: 8px; margin: 2px 0; }
   #legend .swatch { width: 22px; height: 12px; border: 1px solid rgba(0,0,0,0.08); border-radius: 2px; }
 
-  /* Bivariate legend */
-  #biv-legend { margin-top: 12px; }
-  #biv-legend table { border-collapse: collapse; }
-  #biv-legend td { width: 22px; height: 22px; border: 1px solid rgba(0,0,0,0.04); padding: 0; }
+  /* Bivariate legend — clean flexbox layout */
+  #biv-legend { margin-top: 12px; font-size: 11px; color: var(--ink-2); }
+  .biv-cap { font-size: 10.5px; color: var(--ink-2); margin-bottom: 4px; line-height: 1.3; }
+  .biv-cap b { color: var(--ink); }
+  .biv-row { display: flex; align-items: stretch; gap: 6px; }
+  .biv-yrange {
+    display: flex; flex-direction: column; justify-content: space-between;
+    width: 56px;
+    font-size: 10px; color: var(--muted);
+    text-align: right; font-variant-numeric: tabular-nums;
+    padding: 1px 0;
+  }
+  .biv-swatches { border-collapse: collapse; flex: 0 0 auto; }
+  .biv-swatches td {
+    width: 24px; height: 24px;
+    border: 1px solid rgba(0,0,0,0.04);
+    padding: 0;
+  }
+  .biv-xrow { margin-top: 3px; padding-left: 62px; }
+  .biv-xrange {
+    display: flex; justify-content: space-between;
+    width: 78px;
+    font-size: 10px; color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .biv-xcap { font-size: 10.5px; color: var(--ink-2); margin-top: 3px; padding-left: 62px; }
+  .biv-xcap b { color: var(--ink); }
+  .biv-note { margin-top: 10px; font-size: 10.5px; color: var(--muted); line-height: 1.4; }
 
   /* Map */
   #map { height: 100%; }
@@ -185,6 +209,82 @@
   #footer a { color: var(--ink-2); }
 
   .hidden { display: none !important; }
+
+  /* Floating address search */
+  #search-box {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    width: 320px;
+    z-index: 1100;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    font-family: var(--sans);
+  }
+  #search-input {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    padding: 10px 36px 10px 36px;
+    font: inherit; font-size: 13.5px;
+    color: var(--ink);
+    border-radius: 8px;
+    outline: none;
+  }
+  #search-icon {
+    position: absolute;
+    left: 12px; top: 11px;
+    width: 16px; height: 16px;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  #search-clear {
+    position: absolute;
+    right: 8px; top: 7px;
+    width: 24px; height: 24px;
+    border: 0; background: transparent;
+    color: var(--muted);
+    font-size: 16px; cursor: pointer;
+    border-radius: 4px;
+    display: none;
+  }
+  #search-clear:hover { background: var(--paper); color: var(--ink); }
+  #search-results {
+    border-top: 1px solid var(--rule);
+    max-height: 320px;
+    overflow-y: auto;
+    display: none;
+  }
+  #search-results.open { display: block; }
+  .search-result {
+    padding: 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--rule);
+    line-height: 1.3;
+  }
+  .search-result:last-child { border-bottom: 0; }
+  .search-result:hover, .search-result.kbd { background: var(--paper); }
+  .search-result .label { color: var(--ink); }
+  .search-result .sublabel { color: var(--muted); font-size: 11.5px; margin-top: 1px; }
+  .search-status {
+    padding: 8px 12px; font-size: 12px; color: var(--muted);
+  }
+
+  /* Tract pin marker for search-found tract */
+  .search-pin {
+    background: var(--ink);
+    width: 14px; height: 14px;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+
+  @media (max-width: 860px) {
+    #search-box { width: calc(100% - 28px); }
+  }
 </style>
 </head>
 <body>
@@ -246,6 +346,12 @@
   </aside>
   <main style="position:relative;">
     <div id="map"></div>
+    <div id="search-box">
+      <svg id="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input id="search-input" type="text" placeholder="Search a NYC address or place…" autocomplete="off" spellcheck="false">
+      <button id="search-clear" title="Clear">×</button>
+      <div id="search-results"></div>
+    </div>
     <div id="detail-panel">
       <button class="close-btn" id="detail-close">×</button>
       <h3 id="det-title">Tract</h3>
@@ -485,7 +591,7 @@ function renderBivLegend() {
   const ys = GEO.features.map(f => f.properties[yKey]).filter(v => v != null && isFinite(v)).sort(d3.ascending);
   const xlo = fmtValue(xs[0], mx.fmt), xhi = fmtValue(xs[xs.length-1], mx.fmt);
   const ylo = fmtValue(ys[0], my.fmt), yhi = fmtValue(ys[ys.length-1], my.fmt);
-  let grid = '<table><tbody>';
+  let grid = '<table class="swatches"><tbody>';
   for (let y = 2; y >= 0; y--) {
     grid += '<tr>';
     for (let x = 0; x < 3; x++) grid += `<td style="background:${bivCell(x,y)}"></td>`;
@@ -493,22 +599,14 @@ function renderBivLegend() {
   }
   grid += '</tbody></table>';
   document.getElementById("biv-legend").innerHTML = `
-    <div style="display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--ink-2)">
-      <div style="display:flex;flex-direction:column;justify-content:space-between;height:66px;font-size:9.5px;color:var(--muted);text-align:right;padding-top:1px">
-        <span>${yhi}</span><span>${ylo}</span>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-start;gap:2px">
-        <div style="display:flex;align-items:center;gap:6px">
-          <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;color:var(--ink-2);white-space:nowrap;height:66px;display:flex;align-items:center">↑ ${my.label}</div>
-          ${grid}
-        </div>
-        <div style="display:flex;justify-content:space-between;width:66px;margin-left:18px;font-size:9.5px;color:var(--muted)">
-          <span>${xlo}</span><span>${xhi}</span>
-        </div>
-        <div style="margin-left:18px;font-size:10px;color:var(--ink-2)">→ ${mx.label}</div>
-      </div>
+    <div class="biv-cap">↑ <b>${my.label}</b></div>
+    <div class="biv-row">
+      <div class="biv-yrange"><span>${yhi}</span><span>${ylo}</span></div>
+      ${grid.replace('<table>', '<table class="biv-swatches">').replace('<table class="swatches">', '<table class="biv-swatches">')}
     </div>
-    <div style="font-size:10.5px;color:var(--muted);margin-top:8px;line-height:1.35">Each axis split into thirds — roughly 775 tracts per third. Gray = missing on either variable.</div>`;
+    <div class="biv-xrow"><div class="biv-xrange"><span>${xlo}</span><span>${xhi}</span></div></div>
+    <div class="biv-xcap">→ <b>${mx.label}</b></div>
+    <div class="biv-note">Each axis split into thirds — about 775 tracts per third. Gray = missing on either variable.</div>`;
 }
 
 // ===== single-var picker =====
@@ -666,6 +764,153 @@ function initMap() {
     { subdomains: 'abcd', maxZoom: 18, pane: 'shadowPane', opacity: 0.85 }).addTo(map);
   map.fitBounds(geoLayer.getBounds(), { padding: [10, 10] });
 }
+
+// ===== address search (NYC Geosearch — no key required) =====
+let searchPin = null;
+let searchTimer = null;
+let searchKbdIdx = -1;
+let searchActiveResults = [];
+
+const searchInput = document.getElementById("search-input");
+const searchResults = document.getElementById("search-results");
+const searchClear = document.getElementById("search-clear");
+
+function debounce(fn, ms) {
+  return (...args) => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => fn(...args), ms);
+  };
+}
+
+const doAutocomplete = debounce(async (q) => {
+  if (!q || q.length < 3) {
+    searchResults.innerHTML = "";
+    searchResults.classList.remove("open");
+    return;
+  }
+  try {
+    const url = `https://geosearch.planninglabs.nyc/v2/autocomplete?text=${encodeURIComponent(q)}&size=8`;
+    const r = await fetch(url);
+    const d = await r.json();
+    searchActiveResults = (d.features || []).filter(f => f.geometry && f.geometry.coordinates);
+    if (!searchActiveResults.length) {
+      searchResults.innerHTML = '<div class="search-status">No matches.</div>';
+      searchResults.classList.add("open");
+      return;
+    }
+    searchKbdIdx = -1;
+    searchResults.innerHTML = searchActiveResults.map((f, i) => {
+      const p = f.properties || {};
+      const label = p.name || p.label || "(unknown)";
+      const sub = [p.borough, p.region_a].filter(Boolean).join(" · ");
+      return `<div class="search-result" data-i="${i}">
+        <div class="label">${escapeHtml(label)}</div>
+        <div class="sublabel">${escapeHtml(sub || p.label || "")}</div>
+      </div>`;
+    }).join("");
+    searchResults.classList.add("open");
+    searchResults.querySelectorAll(".search-result").forEach(el => {
+      el.addEventListener("click", () => selectSearchResult(+el.dataset.i));
+      el.addEventListener("mouseenter", () => {
+        searchKbdIdx = +el.dataset.i;
+        updateKbdHighlight();
+      });
+    });
+  } catch (e) {
+    console.error("geosearch error:", e);
+    searchResults.innerHTML = '<div class="search-status">Search unavailable.</div>';
+    searchResults.classList.add("open");
+  }
+}, 200);
+
+function updateKbdHighlight() {
+  searchResults.querySelectorAll(".search-result").forEach((el, i) => {
+    el.classList.toggle("kbd", i === searchKbdIdx);
+  });
+}
+
+function findTractAt(lon, lat) {
+  // Use d3.geoContains for robust point-in-polygon on GeoJSON
+  for (const feat of GEO.features) {
+    if (d3.geoContains(feat, [lon, lat])) return feat;
+  }
+  return null;
+}
+
+function selectSearchResult(i) {
+  const f = searchActiveResults[i];
+  if (!f) return;
+  const [lon, lat] = f.geometry.coordinates;
+  const label = (f.properties && (f.properties.label || f.properties.name)) || "Location";
+  searchInput.value = label;
+  searchResults.classList.remove("open");
+
+  // Drop a pin
+  if (searchPin) map.removeLayer(searchPin);
+  searchPin = L.marker([lat, lon], {
+    icon: L.divIcon({ className: "", html: '<div class="search-pin"></div>', iconSize: [20,20], iconAnchor: [10,10] }),
+    interactive: false,
+    keyboard: false,
+  }).addTo(map);
+
+  // Find the tract that contains this point and behave like a click
+  const tract = findTractAt(lon, lat);
+  map.flyTo([lat, lon], Math.max(map.getZoom(), 14), { duration: 0.8 });
+  if (tract && geoLayer) {
+    // Clear previous selection
+    if (selectedGeoid && mode === "single") {
+      geoLayer.eachLayer(l => { if (l.feature.properties.geoid === selectedGeoid) geoLayer.resetStyle(l); });
+    }
+    selectedGeoid = tract.properties.geoid;
+    geoLayer.eachLayer(l => {
+      if (l.feature.properties.geoid === tract.properties.geoid) {
+        l.setStyle(highlightStyle());
+        if (mode === "single") renderDetail(l.feature.properties);
+      }
+    });
+  }
+}
+
+function escapeHtml(s) {
+  return String(s || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+searchInput.addEventListener("input", () => {
+  const v = searchInput.value.trim();
+  searchClear.style.display = v ? "block" : "none";
+  doAutocomplete(v);
+});
+searchInput.addEventListener("keydown", e => {
+  if (!searchResults.classList.contains("open")) return;
+  if (e.key === "ArrowDown") {
+    e.preventDefault();
+    searchKbdIdx = Math.min(searchKbdIdx + 1, searchActiveResults.length - 1);
+    updateKbdHighlight();
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault();
+    searchKbdIdx = Math.max(searchKbdIdx - 1, 0);
+    updateKbdHighlight();
+  } else if (e.key === "Enter") {
+    e.preventDefault();
+    const i = searchKbdIdx >= 0 ? searchKbdIdx : 0;
+    selectSearchResult(i);
+  } else if (e.key === "Escape") {
+    searchResults.classList.remove("open");
+  }
+});
+searchClear.addEventListener("click", () => {
+  searchInput.value = "";
+  searchClear.style.display = "none";
+  searchResults.classList.remove("open");
+  searchResults.innerHTML = "";
+  if (searchPin) { map.removeLayer(searchPin); searchPin = null; }
+  searchInput.focus();
+});
+document.addEventListener("click", e => {
+  if (!document.getElementById("search-box").contains(e.target)) {
+    searchResults.classList.remove("open");
+  }
+});
 
 // ===== bootstrap =====
 Promise.all([
