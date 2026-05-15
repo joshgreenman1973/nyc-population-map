@@ -193,6 +193,7 @@ def derive_one(d, m):
         inc_200p    = sum_safe(d, ["B19001017"])
         inc_150p    = sum_safe(d, ["B19001016", "B19001017"])
         bach_plus = sum_safe(d, ["B15003022", "B15003023", "B15003024", "B15003025"])
+        grad_only = sum_safe(d, ["B15003023", "B15003024", "B15003025"])  # master's + professional + doctorate
         hs_only = sum_safe(d, ["B15003017", "B15003018"])
 
         english_only = get(d, "C16001002")
@@ -261,8 +262,9 @@ def derive_one(d, m):
             "median_home_value": get(d, "B25077001"),
             "median_rent_burden": get(d, "B25071001"),
 
-            "pct_bachelor_plus": pct(bach_plus, edu),
-            "pct_hs_only": pct(hs_only, edu),
+            "pct_bachelor_plus":   pct(bach_plus, edu),
+            "pct_graduate_degree": pct(grad_only, edu),
+            "pct_hs_only":         pct(hs_only,   edu),
 
             "pct_foreign_born": pct(get(d, "B05002013"), fb_total),
             "pct_non_citizen":  pct(get(d, "B05002021"), fb_total),  # foreign-born non-citizens as a share of all residents
@@ -300,6 +302,7 @@ def derive_one(d, m):
             "B01001020","B01001021","B01001022","B01001023","B01001024","B01001025",
             "B01001044","B01001045","B01001046","B01001047","B01001048","B01001049"]])
         bach_plus_moe = moe_sum([get(m, k) for k in ["B15003022","B15003023","B15003024","B15003025"]])
+        grad_only_moe = moe_sum([get(m, k) for k in ["B15003023","B15003024","B15003025"]])
         hs_only_moe   = moe_sum([get(m, k) for k in ["B15003017","B15003018"]])
         inc_u30_moe   = moe_sum([get(m, f"B19001{i:03d}") for i in range(2, 7)])
         inc_150p_moe  = moe_sum([get(m, f"B19001{i:03d}") for i in [16, 17]])
@@ -344,6 +347,7 @@ def derive_one(d, m):
             "pct_owner_occupied":   moe_pct(get(d,"B25003002"), get(m,"B25003002"), tenure, get(m,"B25003001")),
             # Education
             "pct_bachelor_plus":    moe_pct(bach_plus, bach_plus_moe, edu, get(m,"B15003001")),
+            "pct_graduate_degree":  moe_pct(grad_only, grad_only_moe, edu, get(m,"B15003001")),
             "pct_hs_only":          moe_pct(hs_only,   hs_only_moe,   edu, get(m,"B15003001")),
             # Origin / language
             "pct_foreign_born":     moe_pct(get(d,"B05002013"), get(m,"B05002013"), fb_total, get(m,"B05002001")),
@@ -950,6 +954,8 @@ VARS = [
     # --- 8. Education ---
     ("Education", "pct_bachelor_plus", "Bachelor's degree or higher", "pct", "%",
      "Share of residents 25+ holding at least a bachelor's degree."),
+    ("Education", "pct_graduate_degree", "Graduate or professional degree", "pct", "%",
+     "Share of residents 25+ whose highest credential is a master's degree, professional school degree (JD, MD, etc.), or doctorate. A subset of the 'Bachelor's degree or higher' variable above."),
     ("Education", "pct_hs_only", "High-school diploma only", "pct", "%",
      "Share of residents 25+ whose highest credential is a high-school diploma or equivalent."),
 
