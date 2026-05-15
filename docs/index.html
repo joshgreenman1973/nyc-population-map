@@ -53,6 +53,21 @@
   }
   #mode-toggle button.active { background: var(--ink); color: #fff; }
 
+  #geo-toggle {
+    display: flex; align-items: center; gap: 4px;
+    margin-bottom: 12px;
+    font-size: 11.5px;
+  }
+  #geo-toggle .geo-label { color: var(--muted); margin-right: 4px; }
+  #geo-toggle button {
+    background: var(--paper); border: 1px solid var(--rule);
+    border-radius: 5px; padding: 4px 9px;
+    font: inherit; font-size: 11.5px;
+    color: var(--ink-2); cursor: pointer;
+  }
+  #geo-toggle button:hover { background: #e5e0d0; }
+  #geo-toggle button.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
   /* Section labels */
   .section-label {
     font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
@@ -438,6 +453,12 @@
       <button data-mode="bivariate">Two variables</button>
     </div>
 
+    <div id="geo-toggle" title="Aggregating up reduces noise. Combining ~9 tracts into one NTA cuts a typical margin of error by roughly 3×, turning many 'unreliable' tract estimates into reliable neighborhood ones.">
+      <span class="geo-label">Geography:</span>
+      <button data-geo="tract" class="active">Tract</button>
+      <button data-geo="nta">Neighborhood</button>
+    </div>
+
     <!-- Shared current-metric card -->
     <div class="meta-card">
       <h2 id="cur-title">—</h2>
@@ -536,7 +557,10 @@ function fmtValue(val, fmt) {
 
 // ===== state =====
 let VARS = [];
-let GEO = null;
+let GEO_TRACTS = null;
+let GEO_NTAS = null;
+let GEO = null;                  // currently active geometry
+let geoLevel = "tract";          // "tract" | "nta"
 let RELEASE = null;
 let mode = "single";             // "single" | "bivariate"
 let showReliability = false;     // "fade unreliable estimates" toggle
@@ -1013,6 +1037,32 @@ document.querySelectorAll("#mode-toggle button").forEach(b => {
   b.addEventListener("click", () => setMode(b.dataset.mode));
 });
 
+// geography-toggle handler
+function setGeoLevel(level) {
+  if (level === geoLevel) return;
+  geoLevel = level;
+  GEO = level === "nta" ? GEO_NTAS : GEO_TRACTS;
+  document.querySelectorAll("#geo-toggle button").forEach(b => {
+    b.classList.toggle("active", b.dataset.geo === level);
+  });
+  // Recompute scales / bins for the new geometry, redraw layer
+  currentScale = buildScale(metaOf(currentKey));
+  rebuildBivBins();
+  if (geoLayer) {
+    map.removeLayer(geoLayer);
+    geoLayer = null;
+  }
+  if (selectedGeoid) {
+    selectedGeoid = null;
+    document.getElementById("detail-panel").classList.remove("open");
+  }
+  attachGeoLayer();
+  applyCurrent();
+}
+document.querySelectorAll("#geo-toggle button").forEach(b => {
+  b.addEventListener("click", () => setGeoLevel(b.dataset.geo));
+});
+
 // reliability shading toggle
 document.getElementById("show-reliability").addEventListener("change", e => {
   showReliability = e.target.checked;
@@ -1020,12 +1070,7 @@ document.getElementById("show-reliability").addEventListener("change", e => {
 });
 
 // ===== map =====
-function initMap() {
-  map = L.map("map", { zoomControl: true, preferCanvas: true }).setView([40.7128, -73.95], 11);
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> · <a href="https://carto.com/attributions">CARTO</a>',
-    subdomains: 'abcd', maxZoom: 18,
-  }).addTo(map);
+function attachGeoLayer() {
   geoLayer = L.geoJSON(GEO, {
     style: f => styleFor(f.properties),
     onEachFeature: (feat, layer) => {
@@ -1046,6 +1091,14 @@ function initMap() {
       });
     },
   }).addTo(map);
+}
+function initMap() {
+  map = L.map("map", { zoomControl: true, preferCanvas: true }).setView([40.7128, -73.95], 11);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> · <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd', maxZoom: 18,
+  }).addTo(map);
+  attachGeoLayer();
   L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",
     { subdomains: 'abcd', maxZoom: 18, pane: 'shadowPane', opacity: 0.85 }).addTo(map);
   map.fitBounds(geoLayer.getBounds(), { padding: [10, 10] });
@@ -1203,8 +1256,13 @@ Promise.all([
   fetch("variables.json").then(r => r.json()),
   fetch("tracts.geojson").then(r => r.json()),
   fetch("release.json").then(r => r.json()).catch(() => ({})),
-]).then(([vars, geo, release]) => {
-  VARS = vars; GEO = geo; RELEASE = release;
+  fetch("ntas.geojson").then(r => r.json()).catch(() => null),
+]).then(([vars, tractsGeo, release, ntasGeo]) => {
+  VARS = vars;
+  GEO_TRACTS = tractsGeo;
+  GEO_NTAS = ntasGeo;
+  GEO = GEO_TRACTS;
+  RELEASE = release;
   try {
     if (release && release.years) document.getElementById("release-name").textContent = release.years;
     if (release && release.crime_window) document.getElementById("crime-window-end").textContent = release.crime_window.end;

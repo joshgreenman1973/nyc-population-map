@@ -159,226 +159,224 @@ def cv(estimate, moe):
     return moe / (1.645 * abs(estimate))
 
 
-# ---------- derive metrics ----------
-derived = {}
+# ---------- derive metrics (refactored as function so we can call it per-tract AND per-NTA aggregate) ----------
 RELIABILITY_THRESHOLD = 0.30  # MOE > 30% of estimate → flag as unreliable
+
+def derive_one(d, m):
+        """Given raw ACS estimate dict d and MOE dict m, return (record, moes_dict)."""
+        pop = get(d, "B01003001"); pop_moe = get(m, "B01003001")
+        total_race = get(d, "B03002001")
+        hh = get(d, "B11016001")
+        inc_hh = get(d, "B19001001")
+        edu = get(d, "B15003001")
+        fb_total = get(d, "B05002001")
+        lang_total = get(d, "C16001001")
+        tenure = get(d, "B25003001")
+        pov_total = get(d, "B17001001")
+        commute = get(d, "B08301001")
+        lf_total = get(d, "B23025001")       # population 16+
+        lf_in = get(d, "B23025002")           # in labor force (civilian + armed forces)
+        lf_civilian = get(d, "B23025003")     # civilian labor force — the BLS unemployment denominator
+        vet_total = get(d, "B21001001")
+        snap_total = get(d, "B22010001")
+        internet_total = get(d, "B28002001")
+
+        under18 = sum_safe(d, ["B01001003", "B01001004", "B01001005", "B01001006",
+                                "B01001027", "B01001028", "B01001029", "B01001030"])
+        over65 = sum_safe(d, ["B01001020", "B01001021", "B01001022", "B01001023", "B01001024", "B01001025",
+                               "B01001044", "B01001045", "B01001046", "B01001047", "B01001048", "B01001049"])
+        inc_u30 = sum_safe(d, [f"B19001{i:03d}" for i in range(2, 7)])
+        inc_30_60 = sum_safe(d, [f"B19001{i:03d}" for i in range(7, 12)])
+        inc_60_100 = sum_safe(d, ["B19001012", "B19001013"])
+        inc_100_150 = sum_safe(d, ["B19001014", "B19001015"])
+        inc_150p = sum_safe(d, ["B19001016", "B19001017"])
+        bach_plus = sum_safe(d, ["B15003022", "B15003023", "B15003024", "B15003025"])
+        hs_only = sum_safe(d, ["B15003017", "B15003018"])
+
+        english_only = get(d, "C16001002")
+        non_english = (lang_total - english_only) if (lang_total is not None and english_only is not None) else None
+
+        # ---- Vehicles (B08201 = households × vehicles, B25044 = tenure × vehicles) ----
+        veh_total = get(d, "B08201001")
+        veh_0     = get(d, "B08201002")
+        veh_1     = get(d, "B08201003")
+        veh_2     = get(d, "B08201004")
+        veh_3     = get(d, "B08201005")
+        veh_4plus = get(d, "B08201006")
+        veh_3plus = sum_safe(d, ["B08201005", "B08201006"])
+        # Weighted average vehicles per household; use 4.5 as midpoint for the "4 or more" bucket.
+        if veh_total and veh_total > 0 and all(v is not None for v in [veh_0, veh_1, veh_2, veh_3, veh_4plus]):
+            avg_veh = (0*veh_0 + 1*veh_1 + 2*veh_2 + 3*veh_3 + 4.5*veh_4plus) / veh_total
+        else:
+            avg_veh = None
+        # Owner-occupied no vehicle vs renter-occupied no vehicle
+        own_total = get(d, "B25044002")
+        own_no_v  = get(d, "B25044003")
+        rent_total= get(d, "B25044009")
+        rent_no_v = get(d, "B25044010")
+
+        # ---- Schools (B14002 K-12 by public vs. private) ----
+        # K-12 = kindergarten through grade 12; sum male + female.
+        k12_public = sum_safe(d, [
+            "B14002008", "B14002011", "B14002014", "B14002017",  # male K, 1-4, 5-8, 9-12 public
+            "B14002032", "B14002035", "B14002038", "B14002041",  # female K, 1-4, 5-8, 9-12 public
+        ])
+        k12_private = sum_safe(d, [
+            "B14002009", "B14002012", "B14002015", "B14002018",  # male K, 1-4, 5-8, 9-12 private
+            "B14002033", "B14002036", "B14002039", "B14002042",  # female K, 1-4, 5-8, 9-12 private
+        ])
+        k12_total = None
+        if k12_public is not None and k12_private is not None:
+            k12_total = k12_public + k12_private
+
+        rec = {
+            "pop_total": pop,
+            "median_age": get(d, "B01002001"),
+            "pct_under18": pct(under18, pop),
+            "pct_over65": pct(over65, pop),
+
+            "pct_white_nh": pct(get(d, "B03002003"), total_race),
+            "pct_black_nh": pct(get(d, "B03002004"), total_race),
+            "pct_asian_nh": pct(get(d, "B03002006"), total_race),
+            "pct_hispanic": pct(get(d, "B03002012"), total_race),
+
+            "median_hh_income": get(d, "B19013001"),
+            "pct_poverty": pct(get(d, "B17001002"), pov_total),
+            "pct_hh_under30k": pct(inc_u30, inc_hh),
+            "pct_hh_30_60k": pct(inc_30_60, inc_hh),
+            "pct_hh_60_100k": pct(inc_60_100, inc_hh),
+            "pct_hh_100_150k": pct(inc_100_150, inc_hh),
+            "pct_hh_150kplus": pct(inc_150p, inc_hh),
+            "pct_snap": pct(get(d, "B22010002"), snap_total),
+
+            "households": hh,
+            "avg_hh_size": get(d, "B25010001"),
+            "pct_owner_occupied": pct(get(d, "B25003002"), tenure),
+
+            "median_gross_rent": get(d, "B25064001"),
+            "median_home_value": get(d, "B25077001"),
+            "median_rent_burden": get(d, "B25071001"),
+
+            "pct_bachelor_plus": pct(bach_plus, edu),
+            "pct_hs_only": pct(hs_only, edu),
+
+            "pct_foreign_born": pct(get(d, "B05002013"), fb_total),
+            "pct_non_citizen":  pct(get(d, "B05002021"), fb_total),  # foreign-born non-citizens as a share of all residents
+            "pct_non_english_home": pct(non_english, lang_total),
+
+            "pct_in_labor_force": pct(lf_in, lf_total),
+            # Unemployment rate uses the BLS-canonical denominator: civilian labor force.
+            "pct_unemployed": pct(get(d, "B23025005"), lf_civilian),
+            "pct_public_transit": pct(get(d, "B08301010"), commute),
+            "pct_walked": pct(get(d, "B08301019"), commute),
+            "pct_wfh": pct(get(d, "B08301021"), commute),
+
+            "pct_veteran": pct(get(d, "B21001002"), vet_total),
+            "pct_no_internet": pct(get(d, "B28002013"), internet_total),
+
+            # Vehicles (B08201 / B25044)
+            "pct_no_vehicle":        pct(veh_0,     veh_total),
+            "pct_3plus_vehicles":    pct(veh_3plus, veh_total),
+            "avg_vehicles_per_hh":   avg_veh,
+            "pct_owner_no_vehicle":  pct(own_no_v,  own_total),
+            "pct_renter_no_vehicle": pct(rent_no_v, rent_total),
+
+            # Schools (B14002 K-12 by public vs. private)
+            "pct_kids_public_k12":   pct(k12_public,  k12_total),
+            "pct_kids_private_k12":  pct(k12_private, k12_total),
+            "k12_students":          int(k12_total) if k12_total else None,
+        }
+
+        # ===== MOEs for headline variables =====
+        # Sum-of-cells MOEs for derived numerators
+        under18_moe = moe_sum([get(m, k) for k in [
+            "B01001003","B01001004","B01001005","B01001006",
+            "B01001027","B01001028","B01001029","B01001030"]])
+        over65_moe = moe_sum([get(m, k) for k in [
+            "B01001020","B01001021","B01001022","B01001023","B01001024","B01001025",
+            "B01001044","B01001045","B01001046","B01001047","B01001048","B01001049"]])
+        bach_plus_moe = moe_sum([get(m, k) for k in ["B15003022","B15003023","B15003024","B15003025"]])
+        hs_only_moe   = moe_sum([get(m, k) for k in ["B15003017","B15003018"]])
+        inc_u30_moe   = moe_sum([get(m, f"B19001{i:03d}") for i in range(2, 7)])
+        inc_150p_moe  = moe_sum([get(m, f"B19001{i:03d}") for i in [16, 17]])
+        # Non-English: total - English-only. Difference MOE ≈ sum-of-squares.
+        non_eng_moe = moe_sum([get(m, "C16001001"), get(m, "C16001002")])
+        # K-12 public/private/total sums
+        k12_pub_moe = moe_sum([get(m, k) for k in [
+            "B14002008","B14002011","B14002014","B14002017",
+            "B14002032","B14002035","B14002038","B14002041"]])
+        k12_pri_moe = moe_sum([get(m, k) for k in [
+            "B14002009","B14002012","B14002015","B14002018",
+            "B14002033","B14002036","B14002039","B14002042"]])
+        k12_tot_moe = moe_sum([k12_pub_moe, k12_pri_moe])
+
+        moes = {
+            # Direct estimates / medians
+            "pop_total":          pop_moe,
+            "median_age":         get(m, "B01002001"),
+            "median_hh_income":   get(m, "B19013001"),
+            "median_gross_rent":  get(m, "B25064001"),
+            "median_home_value":  get(m, "B25077001"),
+            "median_rent_burden": get(m, "B25071001"),
+            "avg_hh_size":        get(m, "B25010001"),
+            "households":         get(m, "B11016001"),
+            "k12_students":       k12_tot_moe,
+            # Age shares
+            "pct_under18": moe_pct(under18, under18_moe, pop, pop_moe),
+            "pct_over65":  moe_pct(over65,  over65_moe,  pop, pop_moe),
+            # Race / ethnicity shares — denominator is B03002_001 (= pop for these purposes)
+            "pct_white_nh":  moe_pct(get(d,"B03002003"), get(m,"B03002003"), total_race, get(m,"B03002001")),
+            "pct_black_nh":  moe_pct(get(d,"B03002004"), get(m,"B03002004"), total_race, get(m,"B03002001")),
+            "pct_asian_nh":  moe_pct(get(d,"B03002006"), get(m,"B03002006"), total_race, get(m,"B03002001")),
+            "pct_hispanic":  moe_pct(get(d,"B03002012"), get(m,"B03002012"), total_race, get(m,"B03002001")),
+            # Poverty
+            "pct_poverty":   moe_pct(get(d,"B17001002"), get(m,"B17001002"), pov_total, get(m,"B17001001")),
+            # Income brackets — just the two tail brackets (most editorial weight)
+            "pct_hh_under30k":  moe_pct(inc_u30,  inc_u30_moe,  inc_hh, get(m,"B19001001")),
+            "pct_hh_150kplus":  moe_pct(inc_150p, inc_150p_moe, inc_hh, get(m,"B19001001")),
+            # SNAP, tenure
+            "pct_snap":             moe_pct(get(d,"B22010002"), get(m,"B22010002"), snap_total, get(m,"B22010001")),
+            "pct_owner_occupied":   moe_pct(get(d,"B25003002"), get(m,"B25003002"), tenure, get(m,"B25003001")),
+            # Education
+            "pct_bachelor_plus":    moe_pct(bach_plus, bach_plus_moe, edu, get(m,"B15003001")),
+            "pct_hs_only":          moe_pct(hs_only,   hs_only_moe,   edu, get(m,"B15003001")),
+            # Origin / language
+            "pct_foreign_born":     moe_pct(get(d,"B05002013"), get(m,"B05002013"), fb_total, get(m,"B05002001")),
+            "pct_non_citizen":      moe_pct(get(d,"B05002021"), get(m,"B05002021"), fb_total, get(m,"B05002001")),
+            "pct_non_english_home": moe_pct(non_english, non_eng_moe, lang_total, get(m,"C16001001")),
+            # Work
+            "pct_in_labor_force":   moe_pct(lf_in, get(m,"B23025002"), lf_total, get(m,"B23025001")),
+            "pct_unemployed":       moe_pct(get(d,"B23025005"), get(m,"B23025005"), lf_civilian, get(m,"B23025003")),
+            "pct_public_transit":   moe_pct(get(d,"B08301010"), get(m,"B08301010"), commute, get(m,"B08301001")),
+            "pct_walked":           moe_pct(get(d,"B08301019"), get(m,"B08301019"), commute, get(m,"B08301001")),
+            "pct_wfh":              moe_pct(get(d,"B08301021"), get(m,"B08301021"), commute, get(m,"B08301001")),
+            # Other
+            "pct_veteran":     moe_pct(get(d,"B21001002"), get(m,"B21001002"), vet_total,      get(m,"B21001001")),
+            "pct_no_internet": moe_pct(get(d,"B28002013"), get(m,"B28002013"), internet_total, get(m,"B28002001")),
+            # Vehicles
+            "pct_no_vehicle":        moe_pct(veh_0,     get(m,"B08201002"), veh_total,  get(m,"B08201001")),
+            "pct_3plus_vehicles":    moe_pct(veh_3plus, moe_sum([get(m,"B08201005"),get(m,"B08201006")]), veh_total, get(m,"B08201001")),
+            "pct_owner_no_vehicle":  moe_pct(own_no_v,  get(m,"B25044003"), own_total,  get(m,"B25044002")),
+            "pct_renter_no_vehicle": moe_pct(rent_no_v, get(m,"B25044010"), rent_total, get(m,"B25044009")),
+            # Schools
+            "pct_kids_public_k12":   moe_pct(k12_public,  k12_pub_moe, k12_total, k12_tot_moe),
+            "pct_kids_private_k12":  moe_pct(k12_private, k12_pri_moe, k12_total, k12_tot_moe),
+        }
+
+        return rec, moes
+
+derived = {}
+all_moes_ref = all_moes  # kept for NTA aggregation later
 for tract, d in all_data.items():
     m = all_moes.get(tract, {})
-    pop = get(d, "B01003001"); pop_moe = get(m, "B01003001")
-    total_race = get(d, "B03002001")
-    hh = get(d, "B11016001")
-    inc_hh = get(d, "B19001001")
-    edu = get(d, "B15003001")
-    fb_total = get(d, "B05002001")
-    lang_total = get(d, "C16001001")
-    tenure = get(d, "B25003001")
-    pov_total = get(d, "B17001001")
-    commute = get(d, "B08301001")
-    lf_total = get(d, "B23025001")       # population 16+
-    lf_in = get(d, "B23025002")           # in labor force (civilian + armed forces)
-    lf_civilian = get(d, "B23025003")     # civilian labor force — the BLS unemployment denominator
-    vet_total = get(d, "B21001001")
-    snap_total = get(d, "B22010001")
-    internet_total = get(d, "B28002001")
-
-    under18 = sum_safe(d, ["B01001003", "B01001004", "B01001005", "B01001006",
-                            "B01001027", "B01001028", "B01001029", "B01001030"])
-    over65 = sum_safe(d, ["B01001020", "B01001021", "B01001022", "B01001023", "B01001024", "B01001025",
-                           "B01001044", "B01001045", "B01001046", "B01001047", "B01001048", "B01001049"])
-    inc_u30 = sum_safe(d, [f"B19001{i:03d}" for i in range(2, 7)])
-    inc_30_60 = sum_safe(d, [f"B19001{i:03d}" for i in range(7, 12)])
-    inc_60_100 = sum_safe(d, ["B19001012", "B19001013"])
-    inc_100_150 = sum_safe(d, ["B19001014", "B19001015"])
-    inc_150p = sum_safe(d, ["B19001016", "B19001017"])
-    bach_plus = sum_safe(d, ["B15003022", "B15003023", "B15003024", "B15003025"])
-    hs_only = sum_safe(d, ["B15003017", "B15003018"])
-
-    english_only = get(d, "C16001002")
-    non_english = (lang_total - english_only) if (lang_total is not None and english_only is not None) else None
-
-    # ---- Vehicles (B08201 = households × vehicles, B25044 = tenure × vehicles) ----
-    veh_total = get(d, "B08201001")
-    veh_0     = get(d, "B08201002")
-    veh_1     = get(d, "B08201003")
-    veh_2     = get(d, "B08201004")
-    veh_3     = get(d, "B08201005")
-    veh_4plus = get(d, "B08201006")
-    veh_3plus = sum_safe(d, ["B08201005", "B08201006"])
-    # Weighted average vehicles per household; use 4.5 as midpoint for the "4 or more" bucket.
-    if veh_total and veh_total > 0 and all(v is not None for v in [veh_0, veh_1, veh_2, veh_3, veh_4plus]):
-        avg_veh = (0*veh_0 + 1*veh_1 + 2*veh_2 + 3*veh_3 + 4.5*veh_4plus) / veh_total
-    else:
-        avg_veh = None
-    # Owner-occupied no vehicle vs renter-occupied no vehicle
-    own_total = get(d, "B25044002")
-    own_no_v  = get(d, "B25044003")
-    rent_total= get(d, "B25044009")
-    rent_no_v = get(d, "B25044010")
-
-    # ---- Schools (B14002 K-12 by public vs. private) ----
-    # K-12 = kindergarten through grade 12; sum male + female.
-    k12_public = sum_safe(d, [
-        "B14002008", "B14002011", "B14002014", "B14002017",  # male K, 1-4, 5-8, 9-12 public
-        "B14002032", "B14002035", "B14002038", "B14002041",  # female K, 1-4, 5-8, 9-12 public
-    ])
-    k12_private = sum_safe(d, [
-        "B14002009", "B14002012", "B14002015", "B14002018",  # male K, 1-4, 5-8, 9-12 private
-        "B14002033", "B14002036", "B14002039", "B14002042",  # female K, 1-4, 5-8, 9-12 private
-    ])
-    k12_total = None
-    if k12_public is not None and k12_private is not None:
-        k12_total = k12_public + k12_private
-
-    derived[tract] = {
-        "pop_total": pop,
-        "median_age": get(d, "B01002001"),
-        "pct_under18": pct(under18, pop),
-        "pct_over65": pct(over65, pop),
-
-        "pct_white_nh": pct(get(d, "B03002003"), total_race),
-        "pct_black_nh": pct(get(d, "B03002004"), total_race),
-        "pct_asian_nh": pct(get(d, "B03002006"), total_race),
-        "pct_hispanic": pct(get(d, "B03002012"), total_race),
-
-        "median_hh_income": get(d, "B19013001"),
-        "pct_poverty": pct(get(d, "B17001002"), pov_total),
-        "pct_hh_under30k": pct(inc_u30, inc_hh),
-        "pct_hh_30_60k": pct(inc_30_60, inc_hh),
-        "pct_hh_60_100k": pct(inc_60_100, inc_hh),
-        "pct_hh_100_150k": pct(inc_100_150, inc_hh),
-        "pct_hh_150kplus": pct(inc_150p, inc_hh),
-        "pct_snap": pct(get(d, "B22010002"), snap_total),
-
-        "households": hh,
-        "avg_hh_size": get(d, "B25010001"),
-        "pct_owner_occupied": pct(get(d, "B25003002"), tenure),
-
-        "median_gross_rent": get(d, "B25064001"),
-        "median_home_value": get(d, "B25077001"),
-        "median_rent_burden": get(d, "B25071001"),
-
-        "pct_bachelor_plus": pct(bach_plus, edu),
-        "pct_hs_only": pct(hs_only, edu),
-
-        "pct_foreign_born": pct(get(d, "B05002013"), fb_total),
-        "pct_non_citizen":  pct(get(d, "B05002021"), fb_total),  # foreign-born non-citizens as a share of all residents
-        "pct_non_english_home": pct(non_english, lang_total),
-
-        "pct_in_labor_force": pct(lf_in, lf_total),
-        # Unemployment rate uses the BLS-canonical denominator: civilian labor force.
-        "pct_unemployed": pct(get(d, "B23025005"), lf_civilian),
-        "pct_public_transit": pct(get(d, "B08301010"), commute),
-        "pct_walked": pct(get(d, "B08301019"), commute),
-        "pct_wfh": pct(get(d, "B08301021"), commute),
-
-        "pct_veteran": pct(get(d, "B21001002"), vet_total),
-        "pct_no_internet": pct(get(d, "B28002013"), internet_total),
-
-        # Vehicles (B08201 / B25044)
-        "pct_no_vehicle":        pct(veh_0,     veh_total),
-        "pct_3plus_vehicles":    pct(veh_3plus, veh_total),
-        "avg_vehicles_per_hh":   avg_veh,
-        "pct_owner_no_vehicle":  pct(own_no_v,  own_total),
-        "pct_renter_no_vehicle": pct(rent_no_v, rent_total),
-
-        # Schools (B14002 K-12 by public vs. private)
-        "pct_kids_public_k12":   pct(k12_public,  k12_total),
-        "pct_kids_private_k12":  pct(k12_private, k12_total),
-        "k12_students":          int(k12_total) if k12_total else None,
-    }
-
-    # ===== MOEs for headline variables =====
-    # Sum-of-cells MOEs for derived numerators
-    under18_moe = moe_sum([get(m, k) for k in [
-        "B01001003","B01001004","B01001005","B01001006",
-        "B01001027","B01001028","B01001029","B01001030"]])
-    over65_moe = moe_sum([get(m, k) for k in [
-        "B01001020","B01001021","B01001022","B01001023","B01001024","B01001025",
-        "B01001044","B01001045","B01001046","B01001047","B01001048","B01001049"]])
-    bach_plus_moe = moe_sum([get(m, k) for k in ["B15003022","B15003023","B15003024","B15003025"]])
-    hs_only_moe   = moe_sum([get(m, k) for k in ["B15003017","B15003018"]])
-    inc_u30_moe   = moe_sum([get(m, f"B19001{i:03d}") for i in range(2, 7)])
-    inc_150p_moe  = moe_sum([get(m, f"B19001{i:03d}") for i in [16, 17]])
-    # Non-English: total - English-only. Difference MOE ≈ sum-of-squares.
-    non_eng_moe = moe_sum([get(m, "C16001001"), get(m, "C16001002")])
-    # K-12 public/private/total sums
-    k12_pub_moe = moe_sum([get(m, k) for k in [
-        "B14002008","B14002011","B14002014","B14002017",
-        "B14002032","B14002035","B14002038","B14002041"]])
-    k12_pri_moe = moe_sum([get(m, k) for k in [
-        "B14002009","B14002012","B14002015","B14002018",
-        "B14002033","B14002036","B14002039","B14002042"]])
-    k12_tot_moe = moe_sum([k12_pub_moe, k12_pri_moe])
-
-    moes = {
-        # Direct estimates / medians
-        "pop_total":          pop_moe,
-        "median_age":         get(m, "B01002001"),
-        "median_hh_income":   get(m, "B19013001"),
-        "median_gross_rent":  get(m, "B25064001"),
-        "median_home_value":  get(m, "B25077001"),
-        "median_rent_burden": get(m, "B25071001"),
-        "avg_hh_size":        get(m, "B25010001"),
-        "households":         get(m, "B11016001"),
-        "k12_students":       k12_tot_moe,
-        # Age shares
-        "pct_under18": moe_pct(under18, under18_moe, pop, pop_moe),
-        "pct_over65":  moe_pct(over65,  over65_moe,  pop, pop_moe),
-        # Race / ethnicity shares — denominator is B03002_001 (= pop for these purposes)
-        "pct_white_nh":  moe_pct(get(d,"B03002003"), get(m,"B03002003"), total_race, get(m,"B03002001")),
-        "pct_black_nh":  moe_pct(get(d,"B03002004"), get(m,"B03002004"), total_race, get(m,"B03002001")),
-        "pct_asian_nh":  moe_pct(get(d,"B03002006"), get(m,"B03002006"), total_race, get(m,"B03002001")),
-        "pct_hispanic":  moe_pct(get(d,"B03002012"), get(m,"B03002012"), total_race, get(m,"B03002001")),
-        # Poverty
-        "pct_poverty":   moe_pct(get(d,"B17001002"), get(m,"B17001002"), pov_total, get(m,"B17001001")),
-        # Income brackets — just the two tail brackets (most editorial weight)
-        "pct_hh_under30k":  moe_pct(inc_u30,  inc_u30_moe,  inc_hh, get(m,"B19001001")),
-        "pct_hh_150kplus":  moe_pct(inc_150p, inc_150p_moe, inc_hh, get(m,"B19001001")),
-        # SNAP, tenure
-        "pct_snap":             moe_pct(get(d,"B22010002"), get(m,"B22010002"), snap_total, get(m,"B22010001")),
-        "pct_owner_occupied":   moe_pct(get(d,"B25003002"), get(m,"B25003002"), tenure, get(m,"B25003001")),
-        # Education
-        "pct_bachelor_plus":    moe_pct(bach_plus, bach_plus_moe, edu, get(m,"B15003001")),
-        "pct_hs_only":          moe_pct(hs_only,   hs_only_moe,   edu, get(m,"B15003001")),
-        # Origin / language
-        "pct_foreign_born":     moe_pct(get(d,"B05002013"), get(m,"B05002013"), fb_total, get(m,"B05002001")),
-        "pct_non_citizen":      moe_pct(get(d,"B05002021"), get(m,"B05002021"), fb_total, get(m,"B05002001")),
-        "pct_non_english_home": moe_pct(non_english, non_eng_moe, lang_total, get(m,"C16001001")),
-        # Work
-        "pct_in_labor_force":   moe_pct(lf_in, get(m,"B23025002"), lf_total, get(m,"B23025001")),
-        "pct_unemployed":       moe_pct(get(d,"B23025005"), get(m,"B23025005"), lf_civilian, get(m,"B23025003")),
-        "pct_public_transit":   moe_pct(get(d,"B08301010"), get(m,"B08301010"), commute, get(m,"B08301001")),
-        "pct_walked":           moe_pct(get(d,"B08301019"), get(m,"B08301019"), commute, get(m,"B08301001")),
-        "pct_wfh":              moe_pct(get(d,"B08301021"), get(m,"B08301021"), commute, get(m,"B08301001")),
-        # Other
-        "pct_veteran":     moe_pct(get(d,"B21001002"), get(m,"B21001002"), vet_total,      get(m,"B21001001")),
-        "pct_no_internet": moe_pct(get(d,"B28002013"), get(m,"B28002013"), internet_total, get(m,"B28002001")),
-        # Vehicles
-        "pct_no_vehicle":        moe_pct(veh_0,     get(m,"B08201002"), veh_total,  get(m,"B08201001")),
-        "pct_3plus_vehicles":    moe_pct(veh_3plus, moe_sum([get(m,"B08201005"),get(m,"B08201006")]), veh_total, get(m,"B08201001")),
-        "pct_owner_no_vehicle":  moe_pct(own_no_v,  get(m,"B25044003"), own_total,  get(m,"B25044002")),
-        "pct_renter_no_vehicle": moe_pct(rent_no_v, get(m,"B25044010"), rent_total, get(m,"B25044009")),
-        # Schools
-        "pct_kids_public_k12":   moe_pct(k12_public,  k12_pub_moe, k12_total, k12_tot_moe),
-        "pct_kids_private_k12":  moe_pct(k12_private, k12_pri_moe, k12_total, k12_tot_moe),
-    }
-
-    # Attach MOE companion fields. Reliability tiers (Census Bureau guidance):
-    #   moe_ratio = moe / |estimate|
-    #   ratio ≤ 0.20  → reliable;  0.20–0.66 → use with caution;  > 0.66 → unreliable
-    # UI computes moe_ratio on the fly from moe + estimate to save geojson size.
-    rec = derived[tract]
+    rec, moes = derive_one(d, m)
+    # Attach MOE companion fields with size-aware rounding.
     for key, moe_val in moes.items():
-        if moe_val is None:
-            continue
-        # Round to a few significant figures based on magnitude to keep file size down
-        if moe_val >= 1000:
-            rec[key + "_moe"] = round(moe_val)
-        elif moe_val >= 10:
-            rec[key + "_moe"] = round(moe_val, 1)
-        else:
-            rec[key + "_moe"] = round(moe_val, 2)
-
+        if moe_val is None: continue
+        if moe_val >= 1000: rec[key + '_moe'] = round(moe_val)
+        elif moe_val >= 10: rec[key + '_moe'] = round(moe_val, 1)
+        else: rec[key + '_moe'] = round(moe_val, 2)
+    derived[tract] = rec
 
 # ---------- merge NYC DOE public-school enrollment (optional) ----------
 doe_path = DOCS / "doe_k12_by_tract.json"
@@ -463,6 +461,16 @@ else:
 print("Joining tract geometry (NYC DCP 2020 tracts, shoreline-clipped)...")
 base = json.load(open(ROOT / "nyc2020_tracts.geojson"))
 
+# Capture tract→NTA mapping BEFORE the loop below overwrites each feature's properties.
+tract_to_nta = {}
+nta_to_tracts = {}
+for f in base["features"]:
+    g = f["properties"]["geoid"]
+    code = f["properties"].get("nta2020")
+    if code:
+        tract_to_nta[g] = code
+        nta_to_tracts.setdefault(code, []).append(g)
+
 features = []
 unmatched_geom = 0
 for f in base["features"]:
@@ -489,6 +497,138 @@ for f in base["features"]:
     features.append(f)
 
 print(f"Joined {len(features)} tracts (geometry without data: {unmatched_geom}).")
+
+
+# ---------- NTA aggregation ----------
+# Sum raw ACS cells (and MOEs via sum-of-squares) across all tracts in each NTA,
+# then re-derive metrics on the aggregated cells. Same logic, much lower MOEs.
+print("Aggregating to NTAs...")
+nta_base = json.load(open(ROOT / "ntas_2020.geojson"))
+
+print(f"  tract→NTA map: {len(tract_to_nta)} tracts into {len(nta_to_tracts)} NTAs")
+
+# Helper: sum estimate cells across a list of tracts
+def agg_cells(tract_geoids, source):
+    out = {}
+    for g in tract_geoids:
+        cells = source.get(g, {})
+        for k, v in cells.items():
+            if v is None or not isinstance(v, (int, float)):
+                continue
+            out[k] = out.get(k, 0) + v
+    return out
+
+def agg_moe_cells(tract_geoids, source):
+    """MOE of a sum across cells = sqrt(Σ MOE²) for each column."""
+    out = {}
+    for g in tract_geoids:
+        cells = source.get(g, {})
+        for k, v in cells.items():
+            if v is None or not isinstance(v, (int, float)):
+                continue
+            out[k] = out.get(k, 0) + v * v
+    return {k: _math.sqrt(v) for k, v in out.items()}
+
+# Helper: population-weighted average of tract medians (best we can do without re-fetching).
+def weighted_median_estimate(tract_geoids, median_key, weight_key="B01003001"):
+    weighted_sum = 0.0
+    weight_total = 0.0
+    for g in tract_geoids:
+        med = all_data.get(g, {}).get(median_key)
+        wgt = all_data.get(g, {}).get(weight_key)
+        if med is None or wgt is None or wgt <= 0:
+            continue
+        weighted_sum += med * wgt
+        weight_total += wgt
+    return (weighted_sum / weight_total) if weight_total else None
+
+
+# Aggregate
+nta_features = []
+for nf in nta_base["features"]:
+    code = nf["properties"]["nta2020"]
+    member_tracts = nta_to_tracts.get(code, [])
+    if not member_tracts:
+        continue
+    agg_d = agg_cells(member_tracts, all_data)
+    agg_m = agg_moe_cells(member_tracts, all_moes)
+    rec, moes = derive_one(agg_d, agg_m)
+
+    # Replace median estimates with population-weighted tract-median averages (approximation,
+    # since you can't aggregate medians from medians; we flag this in methodology).
+    # Also clear their MOEs from the dict — the sum-of-squares of tract median MOEs is not a
+    # defensible MOE for a population-weighted average. We will not show ± for aggregated medians.
+    for median_key, raw in [
+        ("median_age", "B01002001"),
+        ("median_hh_income", "B19013001"),
+        ("median_gross_rent", "B25064001"),
+        ("median_home_value", "B25077001"),
+        ("median_rent_burden", "B25071001"),
+        ("avg_hh_size", "B25010001"),
+    ]:
+        rec[median_key] = weighted_median_estimate(member_tracts, raw)
+        moes[median_key] = None  # suppress; aggregated medians don't have a clean MOE
+
+    # Attach MOE companions
+    for key, moe_val in moes.items():
+        if moe_val is None: continue
+        if moe_val >= 1000: rec[key + '_moe'] = round(moe_val)
+        elif moe_val >= 10: rec[key + '_moe'] = round(moe_val, 1)
+        else: rec[key + '_moe'] = round(moe_val, 2)
+
+    # Sum DOE schools across member tracts
+    schools = 0
+    doe_k12 = 0
+    for g in member_tracts:
+        t_rec = derived.get(g, {})
+        schools += t_rec.get("doe_public_schools") or 0
+        doe_k12 += t_rec.get("doe_public_k12_enrolled") or 0
+    rec["doe_public_schools"] = schools
+    rec["doe_public_k12_enrolled"] = doe_k12
+
+    # Sum crime across member tracts (numerators) and recompute rate using aggregated pop
+    if crime_path.exists():
+        cv_count = cp_count = ct_count = 0
+        has_crime = False
+        for g in member_tracts:
+            t_rec = derived.get(g, {})
+            cv_count += t_rec.get("crime_violent")  or 0
+            cp_count += t_rec.get("crime_property") or 0
+            ct_count += t_rec.get("crime_total")    or 0
+            has_crime = True
+        rec["crime_violent"]  = cv_count
+        rec["crime_property"] = cp_count
+        rec["crime_total"]    = ct_count
+        pop = rec.get("pop_total")
+        if pop and pop >= 50:
+            rec["crime_violent_rate"]  = 1000.0 * cv_count / pop
+            rec["crime_property_rate"] = 1000.0 * cp_count / pop
+            rec["crime_total_rate"]    = 1000.0 * ct_count / pop
+
+    # Geometry properties
+    sqmi = 0
+    try:
+        sqmi = float(nf["properties"].get("shape_area", 0)) / 27_878_400.0
+    except (TypeError, ValueError):
+        pass
+    rec["pop_density"] = (rec.get("pop_total") / sqmi) if (rec.get("pop_total") and sqmi > 0) else None
+    rec["land_sqmi"] = round(sqmi, 4) if sqmi else None
+    rec["geoid"] = code
+    rec["borough"] = nf["properties"].get("boroname")
+    rec["nta"] = nf["properties"].get("ntaname")
+    rec["ct_label"] = None
+    rec["nta_tract_count"] = len(member_tracts)
+
+    nta_features.append({
+        "type": "Feature",
+        "geometry": nf["geometry"],
+        "properties": rec,
+    })
+
+print(f"Wrote {len(nta_features)} NTAs.")
+nta_out = {"type": "FeatureCollection", "features": nta_features}
+json.dump(nta_out, open(DOCS / "ntas.geojson", "w"))
+print(f"Wrote {DOCS/'ntas.geojson'}  ({(DOCS/'ntas.geojson').stat().st_size/1_000_000:.2f} MB)")
 
 out_geo = {"type": "FeatureCollection", "features": features}
 json.dump(out_geo, open(DOCS / "tracts.geojson", "w"))
