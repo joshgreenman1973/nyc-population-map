@@ -855,6 +855,7 @@ print(f"Wrote {DOCS/'tracts.geojson'}  ({(DOCS/'tracts.geojson').stat().st_size/
 #   who lives there → how they're grouped → money → housing → safety → education → work → leftovers.
 VARS = [
     # --- 1. People ---
+    # Pop totals: ACS estimate then 2020 count.
     ("People", "pop_total", "Total population (ACS, 2020–24 avg)", "int", "people",
      "Total residents in the tract — ACS 2020–24 5-year survey estimate. Has a margin of error; the 2020 Decennial count below is more precise but 5 years older."),
     ("People", "pop_2020", "Total population (2020 Decennial count)", "int", "people",
@@ -863,31 +864,32 @@ VARS = [
      "ACS residents per square mile of land area."),
     ("People", "median_age", "Median age", "num1", "years",
      "Half of residents are older than this age, half younger."),
+    # Age shares, ordered youngest → oldest, with each ACS estimate paired with its 2020 count.
     ("People", "pct_under18", "Share under 18", "pct", "%",
-     "Share of residents younger than 18."),
-    ("People", "pct_over65", "Share 65 and over", "pct", "%",
-     "Share of residents 65 years or older."),
+     "Share of residents younger than 18 — ACS 2020–24 estimate."),
     ("People", "pct_under18_2020", "Share under 18 (2020 count)", "pct", "%",
      "Share under 18 — 2020 Decennial 100% count, no margin of error."),
+    ("People", "pct_over65", "Share 65 and over", "pct", "%",
+     "Share of residents 65 years or older — ACS 2020–24 estimate."),
     ("People", "pct_over65_2020", "Share 65 and over (2020 count)", "pct", "%",
      "Share 65 and over — 2020 Decennial 100% count, no margin of error."),
 
     # --- 2. Race / ethnicity ---
+    # Each race paired ACS estimate immediately followed by 2020 Decennial count.
     ("Race / ethnicity", "pct_white_nh", "White (non-Hispanic)", "pct", "%",
-     "Share identifying as white alone and not Hispanic or Latino."),
-    ("Race / ethnicity", "pct_black_nh", "Black (non-Hispanic)", "pct", "%",
-     "Share identifying as Black or African American alone and not Hispanic or Latino."),
-    ("Race / ethnicity", "pct_asian_nh", "Asian (non-Hispanic)", "pct", "%",
-     "Share identifying as Asian alone and not Hispanic or Latino."),
-    ("Race / ethnicity", "pct_hispanic", "Hispanic or Latino (any race)", "pct", "%",
-     "Share identifying as Hispanic or Latino, of any race."),
-
+     "Share identifying as white alone and not Hispanic or Latino — ACS 2020–24 estimate."),
     ("Race / ethnicity", "pct_white_nh_2020", "White non-Hispanic (2020 count)", "pct", "%",
      "Share identifying as White alone, non-Hispanic — 2020 Decennial Census 100% count, not a survey estimate. More precise than the ACS version above but 5 years older."),
+    ("Race / ethnicity", "pct_black_nh", "Black (non-Hispanic)", "pct", "%",
+     "Share identifying as Black or African American alone and not Hispanic or Latino — ACS 2020–24 estimate."),
     ("Race / ethnicity", "pct_black_nh_2020", "Black non-Hispanic (2020 count)", "pct", "%",
      "Share identifying as Black or African American alone, non-Hispanic — 2020 Decennial 100% count."),
+    ("Race / ethnicity", "pct_asian_nh", "Asian (non-Hispanic)", "pct", "%",
+     "Share identifying as Asian alone and not Hispanic or Latino — ACS 2020–24 estimate."),
     ("Race / ethnicity", "pct_asian_nh_2020", "Asian non-Hispanic (2020 count)", "pct", "%",
      "Share identifying as Asian alone, non-Hispanic — 2020 Decennial 100% count."),
+    ("Race / ethnicity", "pct_hispanic", "Hispanic or Latino (any race)", "pct", "%",
+     "Share identifying as Hispanic or Latino, of any race — ACS 2020–24 estimate."),
     ("Race / ethnicity", "pct_hispanic_2020", "Hispanic or Latino (2020 count)", "pct", "%",
      "Share identifying as Hispanic or Latino, of any race — 2020 Decennial 100% count."),
 
@@ -952,18 +954,20 @@ VARS = [
      "Burglary, grand larceny, and grand larceny of motor vehicle per 1,000 residents over the most recent 12 months (NYPD)."),
 
     # --- 8. Education ---
+    # Ordered low → high attainment.
+    ("Education", "pct_hs_only", "High-school diploma only", "pct", "%",
+     "Share of residents 25+ whose highest credential is a high-school diploma or equivalent."),
     ("Education", "pct_bachelor_plus", "Bachelor's degree or higher", "pct", "%",
      "Share of residents 25+ holding at least a bachelor's degree."),
     ("Education", "pct_graduate_degree", "Graduate or professional degree", "pct", "%",
      "Share of residents 25+ whose highest credential is a master's degree, professional school degree (JD, MD, etc.), or doctorate. A subset of the 'Bachelor's degree or higher' variable above."),
-    ("Education", "pct_hs_only", "High-school diploma only", "pct", "%",
-     "Share of residents 25+ whose highest credential is a high-school diploma or equivalent."),
 
     # --- 9. Schools (K-12) — pairs naturally with Education ---
-    ("Schools (K-12)", "pct_kids_public_k12", "K-12 students in public school", "pct", "%",
-     "Share of kindergarten-through-12th-grade students enrolled in public school."),
+    # Total count first, then share by residence, then location-based count.
     ("Schools (K-12)", "k12_students", "K-12 students (count, by residence)", "int", "students",
      "Total K-12 students living in the tract (ACS, by student residence)."),
+    ("Schools (K-12)", "pct_kids_public_k12", "K-12 students in public school", "pct", "%",
+     "Share of kindergarten-through-12th-grade students enrolled in public school (ACS, by student residence; the complement attends private or parochial)."),
     ("Schools (K-12)", "doe_public_k12_enrolled", "Public-school K-12 enrolled (by school location)", "int", "students",
      "K-12 students enrolled at public schools located in this tract, from NYC DOE Demographic Snapshot rosters. Counts by school location, not student residence — so the number is high in tracts that contain a large school and zero in tracts with no school."),
 
