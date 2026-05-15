@@ -396,8 +396,6 @@ if rs_path.exists():
             continue
         d["rs_buildings"]     = rec.get("rs_buildings") or 0
         d["rs_units_2024"]    = rec.get("rs_units_2024") or 0
-        d["rs_units_2018"]    = rec.get("rs_units_2018") or 0
-        d["rs_unit_change_pct_2018_2024"] = rec.get("rs_unit_change_pct_2018_2024")
         # Density (units per sq mi) — needs land area, computed downstream during join
         # Share of renter-occupied — needs B25003_003 from raw, computed here
         renter_units = all_data.get(tract, {}).get("B25003003")
@@ -708,29 +706,28 @@ for nf in nta_base["features"]:
 
     # Rent-stabilized aggregation (sum across member tracts)
     if rs_path.exists():
-        rs_b = rs_u = rs_u18 = 0
+        rs_b = rs_u = 0
         for g in member_tracts:
             t_rec = derived.get(g, {})
             rs_b += t_rec.get("rs_buildings") or 0
             rs_u += t_rec.get("rs_units_2024") or 0
-            rs_u18 += t_rec.get("rs_units_2018") or 0
         rec["rs_buildings"] = rs_b
         rec["rs_units_2024"] = rs_u
-        rec["rs_units_2018"] = rs_u18
-        # Density (units per sq mi)
-        if rec.get("land_sqmi") and rec["land_sqmi"] > 0:
-            rec["rs_density_per_sqmi"] = rs_u / rec["land_sqmi"]
-        # Share of renter-occupied units (ACS B25003_003 aggregated). We don't have that
-        # value summed here — compute via tract-level estimate (already aggregated by sum):
+        # Density (units per sq mi) — compute sqmi here from this NTA's shape_area
+        # because rec["land_sqmi"] isn't set until later in this loop iteration.
+        try:
+            nta_sqmi = float(nf["properties"].get("shape_area", 0)) / 27_878_400.0
+        except (TypeError, ValueError):
+            nta_sqmi = 0
+        if rs_u and nta_sqmi > 0:
+            rec["rs_density_per_sqmi"] = rs_u / nta_sqmi
+        # Share of renter-occupied units (ACS B25003_003 aggregated)
         renter_units = 0
         for g in member_tracts:
-            t = all_data.get(g, {})
-            v = t.get("B25003003")
+            v = all_data.get(g, {}).get("B25003003")
             if v: renter_units += v
         if renter_units > 0:
             rec["rs_share_of_renters"] = min(100.0, 100.0 * rs_u / renter_units)
-        if rs_u18 > 0:
-            rec["rs_unit_change_pct_2018_2024"] = 100.0 * (rs_u - rs_u18) / rs_u18
 
     # NHGIS DHC 2020 counts aggregation: sum raw cells, recompute percentages
     if nhgis_path.exists():
@@ -946,8 +943,6 @@ VARS = [
      "Number of buildings with at least one rent-stabilized unit billed on their 2024 property tax bill. This is the cleaner of the two rent-stabilization metrics — the building list is well-defined, while the per-building unit count is a tax-bill-derived estimate."),
     ("Housing", "rs_density_per_sqmi", "Rent-stabilized unit density", "num1", "units/sq mi",
      "Estimated rent-stabilized apartments per square mile of land area. Same source caveats as the unit count above."),
-    ("Housing", "rs_unit_change_pct_2018_2024", "Rent-stabilized unit change, 2018→2024", "num1", "%",
-     "Percent change in tax-bill-derived rent-stabilized unit counts from 2018 to 2024. Negative values are losses (luxury vacancy decontrol pre-2019, demolition, formal destabilization, or buildings exiting the registry); positive values usually reflect new 421-a buildings entering the stabilized stock."),
 
     # --- 7. Crime ---
     ("Crime (rolling 12 mo.)", "crime_total_rate", "Major-felony rate", "num1", "per 1,000 residents",
