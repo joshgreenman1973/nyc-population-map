@@ -378,6 +378,45 @@ for tract, d in all_data.items():
             rec[key + "_moe"] = round(moe_val, 2)
 
 
+# ---------- merge NYC DOE public-school enrollment (optional) ----------
+doe_path = DOCS / "doe_k12_by_tract.json"
+doe_meta = None
+if doe_path.exists():
+    print("Merging NYC DOE K-12 public-school enrollment...")
+    doej = json.load(open(doe_path))
+    doe_meta = doej.get("meta")
+    by_tract_doe = doej.get("by_tract", {})
+    matched = 0
+    for tract, d in derived.items():
+        rec = by_tract_doe.get(tract)
+        if rec:
+            d["doe_public_k12_enrolled"] = rec.get("k12_enrolled") or 0
+            d["doe_public_schools"]      = rec.get("schools") or 0
+            matched += 1
+        else:
+            d["doe_public_k12_enrolled"] = 0
+            d["doe_public_schools"]      = 0
+    print(f"  attached counts to all {len(derived)} tracts (non-zero: {sum(1 for v in derived.values() if v.get('doe_public_k12_enrolled'))})")
+else:
+    print(f"No {doe_path.name} found — skipping DOE merge (run fetch_doe_schools.py first).")
+
+
+# ---------- merge 2020 Decennial population (optional) ----------
+dec_path = DOCS / "decennial_2020_by_tract.json"
+if dec_path.exists():
+    print("Merging 2020 Decennial population...")
+    dec = json.load(open(dec_path))
+    matched = 0
+    for tract, d in derived.items():
+        p = dec.get(tract)
+        if p is not None:
+            d["pop_2020"] = p
+            matched += 1
+    print(f"  matched {matched} tracts")
+else:
+    print(f"No {dec_path.name} found — skipping Decennial merge (set CENSUS_API_KEY and run fetch_decennial.py first).")
+
+
 # ---------- merge crime counts (if available) ----------
 crime_path = DOCS / "crime_by_tract.json"
 crime_meta = None
@@ -538,8 +577,12 @@ VARS = [
      "Share of kindergarten-through-12th-grade students enrolled in public school."),
     ("Schools (K-12)", "pct_kids_private_k12", "K-12 students in private school", "pct", "%",
      "Share of kindergarten-through-12th-grade students enrolled in private school (Census combines parochial and independent private here)."),
-    ("Schools (K-12)", "k12_students", "K-12 students (count)", "int", "students",
-     "Total K-12 students in the tract."),
+    ("Schools (K-12)", "k12_students", "K-12 students (count, by residence)", "int", "students",
+     "Total K-12 students living in the tract (ACS, by student residence)."),
+    ("Schools (K-12)", "doe_public_k12_enrolled", "Public-school K-12 enrolled (by school location)", "int", "students",
+     "K-12 students enrolled at public schools located in this tract, from NYC DOE Demographic Snapshot rosters. Counts by school location, not student residence — so the number is high in tracts that contain a large school and zero in tracts with no school."),
+    ("Schools (K-12)", "doe_public_schools", "Public K-12 schools in tract", "int", "schools",
+     "Number of NYC DOE public K-12 schools physically located in the tract (includes charters operating under DOE; excludes private/parochial)."),
 
     # --- 10. Work & commute ---
     ("Work & commute", "pct_in_labor_force", "In labor force (16+)", "pct", "%",
