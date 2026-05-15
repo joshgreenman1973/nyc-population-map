@@ -22,106 +22,113 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: var(--sans); }
   a { color: var(--accent); }
-  h1, h2, h3 { font-family: var(--sans); font-weight: 600; letter-spacing: -0.01em; }
-  #app { display: grid; grid-template-columns: 340px 1fr; height: 100vh; }
-  @media (max-width: 820px) {
+  h1 { font-family: var(--sans); font-weight: 600; letter-spacing: -0.01em; }
+  #app { display: grid; grid-template-columns: 360px 1fr; height: 100vh; }
+  @media (max-width: 860px) {
     #app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-    #sidebar { max-height: 50vh; overflow-y: auto; }
+    #sidebar { max-height: 55vh; overflow-y: auto; }
   }
   #sidebar {
     background: var(--panel);
     border-right: 1px solid var(--rule);
-    padding: 18px 20px 24px;
+    padding: 16px 20px 22px;
     overflow-y: auto;
   }
-  #sidebar h1 {
-    margin: 0 0 2px;
-    font-size: 19px;
-    line-height: 1.2;
-  }
-  #sidebar .sub {
-    color: var(--muted);
-    font-size: 12.5px;
-    line-height: 1.4;
+  #sidebar h1 { margin: 0 0 2px; font-size: 19px; line-height: 1.2; }
+  #sidebar .sub { color: var(--muted); font-size: 12.5px; line-height: 1.45; margin-bottom: 14px; }
+
+  /* Mode toggle */
+  #mode-toggle {
+    display: flex; gap: 0;
+    background: var(--paper);
+    border-radius: 7px;
+    padding: 3px;
     margin-bottom: 14px;
   }
+  #mode-toggle button {
+    flex: 1;
+    background: transparent; border: 0; font: inherit; font-size: 12.5px;
+    padding: 7px 10px; border-radius: 5px; cursor: pointer;
+    color: var(--ink-2); font-weight: 500;
+  }
+  #mode-toggle button.active { background: var(--ink); color: #fff; }
 
+  /* Section labels */
   .section-label {
-    font-size: 10.5px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin: 18px 0 6px;
-    font-weight: 600;
+    font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); margin: 16px 0 6px; font-weight: 600;
   }
 
-  .var-group { margin-bottom: 4px; }
-  .var-group-title {
-    font-size: 11px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--ink-2);
-    font-weight: 600;
-    margin: 12px 0 4px;
-  }
-  .var-btn {
-    display: block;
-    width: 100%;
-    text-align: left;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 6px;
-    padding: 6px 8px;
-    margin: 1px 0;
-    font: inherit;
-    font-size: 13.5px;
-    color: var(--ink);
-    cursor: pointer;
-    line-height: 1.25;
-  }
-  .var-btn:hover { background: var(--paper); }
-  .var-btn.active {
-    background: var(--ink);
-    color: #fff;
-    border-color: var(--ink);
-  }
-
-  #current-meta {
+  /* Current-metric card */
+  .meta-card {
     background: var(--paper);
     border-radius: 8px;
     padding: 12px 14px;
     margin-bottom: 8px;
   }
-  #current-meta .label { font-weight: 600; font-size: 14px; line-height: 1.25; }
-  #current-meta .desc { color: var(--ink-2); font-size: 12.5px; line-height: 1.4; margin-top: 4px; }
-  #current-meta .src { color: var(--muted); font-size: 11.5px; margin-top: 6px; }
+  .meta-card h2 { font-size: 14.5px; margin: 0 0 4px; line-height: 1.25; font-weight: 600; }
+  .meta-card .desc { color: var(--ink-2); font-size: 12.5px; line-height: 1.4; }
+  .meta-card .desc b { color: var(--ink); }
+  .meta-card .src { color: var(--muted); font-size: 11.5px; margin-top: 6px; }
+  .meta-card .story { font-size: 12.5px; color: var(--ink-2); line-height: 1.45; margin-top: 8px; border-top: 1px solid var(--rule); padding-top: 8px; }
 
-  #scale-toggle {
-    display: flex;
-    gap: 4px;
-    margin-top: 10px;
-    font-size: 11.5px;
+  /* Single-var picker */
+  .var-group-title {
+    font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--ink-2); font-weight: 600; margin: 12px 0 4px;
   }
+  .var-btn {
+    display: block; width: 100%; text-align: left;
+    background: transparent; border: 1px solid transparent;
+    border-radius: 6px; padding: 6px 8px; margin: 1px 0;
+    font: inherit; font-size: 13.5px; color: var(--ink); cursor: pointer; line-height: 1.25;
+  }
+  .var-btn:hover { background: var(--paper); }
+  .var-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  /* Scale toggle */
+  #scale-toggle { display: flex; gap: 4px; margin-top: 10px; font-size: 11.5px; }
   #scale-toggle button {
-    flex: 1;
-    background: transparent;
-    border: 1px solid var(--rule);
-    padding: 5px 8px;
-    border-radius: 5px;
-    font: inherit;
-    color: var(--ink-2);
-    cursor: pointer;
+    flex: 1; background: transparent; border: 1px solid var(--rule);
+    padding: 5px 8px; border-radius: 5px; font: inherit; color: var(--ink-2); cursor: pointer;
   }
   #scale-toggle button.active { background: var(--ink); color: #fff; border-color: var(--ink); }
 
-  #legend {
-    margin-top: 10px;
-    font-size: 11.5px;
-    color: var(--ink-2);
+  /* Bivariate presets */
+  .preset {
+    display: block; width: 100%; text-align: left;
+    background: var(--paper); border: 1px solid transparent; border-radius: 7px;
+    padding: 8px 11px; margin: 4px 0; font: inherit; font-size: 13px; color: var(--ink);
+    cursor: pointer; line-height: 1.3;
   }
+  .preset:hover { background: #e5e0d0; }
+  .preset.active { background: var(--ink); color: #fff; }
+  .preset .nm { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+  .preset .axes { font-size: 11.5px; opacity: 0.85; }
+  .preset.active .axes { opacity: 0.9; }
+
+  /* Bivariate picker */
+  .picker { margin-top: 10px; }
+  .picker label {
+    display: block; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600; margin: 8px 0 3px;
+  }
+  .picker select {
+    width: 100%; padding: 6px 8px; font: inherit; font-size: 13px;
+    border: 1px solid var(--rule); border-radius: 5px; background: #fff;
+  }
+
+  /* Single-var legend */
+  #legend { margin-top: 10px; font-size: 11.5px; color: var(--ink-2); }
   #legend .row { display: flex; align-items: center; gap: 8px; margin: 2px 0; }
   #legend .swatch { width: 22px; height: 12px; border: 1px solid rgba(0,0,0,0.08); border-radius: 2px; }
 
+  /* Bivariate legend */
+  #biv-legend { margin-top: 12px; }
+  #biv-legend table { border-collapse: collapse; }
+  #biv-legend td { width: 22px; height: 22px; border: 1px solid rgba(0,0,0,0.04); padding: 0; }
+
+  /* Map */
   #map { height: 100%; }
   .leaflet-container { background: var(--bg); font: inherit; }
   .leaflet-bar a, .leaflet-bar a:hover { background: var(--panel); color: var(--ink); }
@@ -133,13 +140,18 @@
     box-shadow: var(--shadow);
     font-size: 12.5px;
     line-height: 1.35;
-    max-width: 240px;
+    max-width: 260px;
   }
   .tract-tooltip .ttl { font-weight: 600; margin-bottom: 2px; }
-  .tract-tooltip .nta { color: var(--muted); font-size: 11px; margin-bottom: 4px; }
+  .tract-tooltip .nta { color: var(--muted); font-size: 11px; margin-bottom: 6px; }
   .tract-tooltip .val { font-family: var(--serif); font-size: 18px; line-height: 1; }
   .tract-tooltip .units { color: var(--muted); font-size: 11.5px; margin-left: 4px; }
+  .tract-tooltip .pair { display: flex; justify-content: space-between; gap: 10px; margin: 2px 0; font-size: 12px; }
+  .tract-tooltip .pair .v { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .leaflet-tooltip.tract-tip-wrap { background: transparent; border: 0; box-shadow: none; padding: 0; }
+  .leaflet-tooltip.tract-tip-wrap::before { display: none; }
 
+  /* Detail panel (single-var click) */
   #detail-panel {
     position: absolute; right: 14px; bottom: 14px; top: 14px;
     width: 290px;
@@ -154,53 +166,79 @@
   }
   #detail-panel.open { display: block; }
   #detail-panel .close-btn {
-    float: right;
-    background: transparent;
-    border: 0;
-    font-size: 18px;
-    line-height: 1;
-    color: var(--muted);
-    cursor: pointer;
-    padding: 2px 4px;
+    float: right; background: transparent; border: 0; font-size: 18px;
+    line-height: 1; color: var(--muted); cursor: pointer; padding: 2px 4px;
   }
   #detail-panel h3 { margin: 0 0 2px; font-size: 14.5px; }
   #detail-panel .nta-name { color: var(--muted); font-size: 11.5px; margin-bottom: 12px; }
-  #detail-panel .det-group { font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 12px 0 4px; font-weight: 600; }
+  #detail-panel .det-group {
+    font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--muted); margin: 12px 0 4px; font-weight: 600;
+  }
   #detail-panel .det-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted var(--rule); }
   #detail-panel .det-row .v { font-variant-numeric: tabular-nums; font-weight: 600; }
-  @media (max-width: 820px) {
+  @media (max-width: 860px) {
     #detail-panel { left: 14px; right: 14px; top: auto; bottom: 14px; width: auto; max-height: 40vh; }
   }
 
-  #footer {
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 18px;
-    line-height: 1.5;
-  }
+  #footer { font-size: 11px; color: var(--muted); margin-top: 18px; line-height: 1.5; }
   #footer a { color: var(--ink-2); }
+
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
 <div id="app">
   <aside id="sidebar">
-    <div style="font-size:12px;margin-bottom:8px"><a href="index.html" style="color:#111;text-decoration:none;font-weight:600;border-bottom:2px solid #111;margin-right:10px">Single variable</a><a href="bivariate.html" style="color:#4a4a4a;text-decoration:none;margin-right:10px">Bivariate</a></div>
     <h1>New York City population explorer</h1>
-    <div class="sub">Every census tract in the five boroughs, colored by the demographic metric you choose. Hover a tract for the value; click for a full profile.</div>
+    <div class="sub">Every census tract in the five boroughs, colored by the variables you choose. One variable, or two at once.</div>
 
-    <div id="current-meta">
-      <div class="label" id="cur-label">—</div>
-      <div class="desc" id="cur-desc">—</div>
-      <div class="src" id="cur-src">—</div>
-      <div id="scale-toggle">
-        <button data-scale="quantile" class="active">Quantile</button>
-        <button data-scale="linear">Linear</button>
-      </div>
-      <div id="legend"></div>
+    <div id="mode-toggle">
+      <button data-mode="single" class="active">Single variable</button>
+      <button data-mode="bivariate">Two variables</button>
     </div>
 
-    <div class="section-label">Variable</div>
-    <div id="var-list"></div>
+    <!-- Shared current-metric card -->
+    <div class="meta-card">
+      <h2 id="cur-title">—</h2>
+      <div class="desc" id="cur-desc">—</div>
+      <div class="src" id="cur-src">—</div>
+
+      <!-- Single-var legend -->
+      <div id="single-legend-wrap">
+        <div id="scale-toggle">
+          <button data-scale="quantile" class="active">Quantile</button>
+          <button data-scale="linear">Linear</button>
+        </div>
+        <div id="legend"></div>
+      </div>
+
+      <!-- Bivariate legend -->
+      <div id="biv-legend" class="hidden"></div>
+
+      <!-- Bivariate preset story -->
+      <div id="biv-story" class="story hidden"></div>
+    </div>
+
+    <!-- Single-var picker -->
+    <div id="single-pane">
+      <div class="section-label">Variable</div>
+      <div id="var-list"></div>
+    </div>
+
+    <!-- Bivariate picker -->
+    <div id="biv-pane" class="hidden">
+      <div class="section-label">Ten preset pairings</div>
+      <div id="presets"></div>
+
+      <div class="section-label" style="margin-top:16px">Pick any two</div>
+      <div class="picker">
+        <label>X axis (horizontal in legend)</label>
+        <select id="pick-x"></select>
+        <label>Y axis (vertical in legend)</label>
+        <select id="pick-y"></select>
+      </div>
+    </div>
 
     <div id="footer">
       Data: <a href="https://api.censusreporter.org" target="_blank" rel="noopener">Census Reporter</a> mirror of the U.S. Census Bureau American Community Survey 5-year (<span id="release-name">2020–2024</span>). Tract geometry from <a href="https://www.nyc.gov/site/planning/data-maps/open-data.page" target="_blank" rel="noopener">NYC DCP</a>, shoreline-clipped 2020 vintage. Missing values shown in gray. See <a href="methodology.html">methodology</a>.
@@ -225,9 +263,9 @@
 <script src="https://cdn.jsdelivr.net/npm/d3-color@3"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3-format@3"></script>
 <script>
-// ---------- formatting ----------
+// ===== formatting =====
 const fmtInt = d3.format(",.0f");
-const fmtUsd = v => (v >= 1000 ? "$" + d3.format(",.0f")(v) : "$" + d3.format(".0f")(v));
+const fmtUsd = v => "$" + d3.format(",.0f")(v);
 const fmtPct = d3.format(".1f");
 const fmtNum1 = d3.format(",.1f");
 const fmtNum2 = d3.format(",.2f");
@@ -243,20 +281,24 @@ function fmtValue(val, fmt) {
   }
 }
 
-// ---------- state ----------
+// ===== state =====
 let VARS = [];
 let GEO = null;
 let RELEASE = null;
+let mode = "single";             // "single" | "bivariate"
+// single-var
 let currentKey = "pop_total";
-let scaleMode = "quantile"; // or "linear"
-let geoLayer = null;
-let map = null;
-let selectedGeoid = null;
+let scaleMode = "quantile";
+let currentScale = null;
+// bivariate
+let xKey = "median_hh_income";
+let yKey = "pct_hispanic";
+let currentStory = "";
+let binX = null, binY = null;
+// shared
+let map = null, geoLayer = null, selectedGeoid = null;
 
-// ---------- color ramps ----------
-// Sequential metric → single-hue ramp.
-// Some metrics work better as diverging (e.g., race shares are bounded 0-100 with no strong "more is good")
-// but for simplicity we use sequential viridis-like ramps throughout, swapping palette by group.
+// ===== palettes =====
 const PALETTES = {
   default: d3.interpolateYlGnBu,
   "Race / ethnicity": d3.interpolatePurples,
@@ -269,92 +311,141 @@ const PALETTES = {
   "Other": d3.interpolateGreys,
   "People": d3.interpolateViridis,
 };
+function paletteFor(varMeta) { return PALETTES[varMeta.group] || PALETTES.default; }
 
-function paletteFor(varMeta) {
-  return PALETTES[varMeta.group] || PALETTES.default;
-}
+// 3x3 bivariate palette ("DkViolet" style)
+const BIV_PALETTE = [
+  ["#e8e8e8","#ace4e4","#5ac8c8"],
+  ["#dfb0d6","#a5add3","#5698b9"],
+  ["#be64ac","#8c62aa","#3b4994"],
+];
+function bivCell(xb, yb) { return BIV_PALETTE[yb][xb]; }
 
-// ---------- build the scale for current variable ----------
+// ===== ten bivariate presets =====
+const PRESETS = [
+  { x: "median_hh_income",   y: "pct_hispanic",        name: "Income × Hispanic share",
+    story: "The diagonal corners show where the wealth–ethnicity overlap is starkest: lower-income tracts that are heavily Hispanic, versus higher-income tracts that are not." },
+  { x: "pct_bachelor_plus",  y: "median_gross_rent",   name: "Education × rent",
+    story: "Where the college-degree premium has been capitalized into rents — and the rare tracts where one is high but the other isn't." },
+  { x: "pct_foreign_born",   y: "pct_non_english_home",name: "Foreign-born × non-English at home",
+    story: "On the diagonal, immigrant communities that keep their first language at home. Off-diagonal: English-speaking immigrant enclaves, or English-isolated U.S.-born residents." },
+  { x: "pct_poverty",        y: "pct_under18",         name: "Poverty × kids",
+    story: "The top-right corner is the child-poverty geography of New York City: tracts where poverty rates and the share of children are both high." },
+  { x: "pct_owner_occupied", y: "pct_over65",          name: "Owner-occupied × 65 and over",
+    story: "Older homeowners aging in place cluster in the upper right. The upper left is the more vulnerable picture — older renters." },
+  { x: "median_hh_income",   y: "pct_public_transit",  name: "Income × transit commute",
+    story: "Transit-rich-and-rich (Manhattan core) shows up in the upper right; transit-dependent low income in the upper left; the lower-right is car-leaning higher-income outer borough." },
+  { x: "pct_bachelor_plus",  y: "pct_wfh",             name: "Education × work-from-home",
+    story: "The laptop-class geography. The upper-right tracts are where a degree and a home office overlap; the lower-right are college-degreed but back at the office." },
+  { x: "median_hh_income",   y: "median_rent_burden",  name: "Income × rent burden",
+    story: "Two ways to be cost-burdened: low income paying any rent (upper-left), versus higher income paying outsized rents (upper-right). Lower-left tracts are the most affordable; lower-right the most comfortable." },
+  { x: "pct_white_nh",       y: "pct_black_nh",        name: "White × Black",
+    story: "A segregation map. Tracts on the diagonal are dominated by one group or the other; the middle cell is the most integrated. The lower-left is where neither population dominates — likely Asian- or Hispanic-majority." },
+  { x: "pop_density",        y: "median_home_value",   name: "Density × home value",
+    story: "Where dense doesn't mean cheap — and where it does. Upper-right is high-density, high-value (the Manhattan/brownstone-Brooklyn pattern); upper-left is dense but lower-value outer-borough rental stock." },
+];
+
+// ===== single-variable color scale =====
 function buildScale(varMeta) {
   const values = GEO.features
     .map(f => f.properties[varMeta.key])
     .filter(v => v != null && isFinite(v));
-  if (values.length === 0) return null;
+  if (!values.length) return null;
   const palette = paletteFor(varMeta);
   if (scaleMode === "quantile") {
-    // 7-bin quantile
     const N = 7;
+    const sorted = values.slice().sort(d3.ascending);
     const breaks = [];
-    for (let i = 1; i < N; i++) breaks.push(d3.quantileSorted(values.slice().sort(d3.ascending), i / N));
+    for (let i = 1; i < N; i++) breaks.push(d3.quantileSorted(sorted, i / N));
     const scale = d3.scaleThreshold().domain(breaks).range(d3.range(N).map(i => palette((i + 0.5) / N)));
-    scale.kind = "quantile";
-    scale.breaks = breaks;
-    scale.N = N;
-    scale.values = values;
-    return scale;
-  } else {
-    const [lo, hi] = d3.extent(values);
-    const scale = d3.scaleSequential(palette).domain([lo, hi]);
-    scale.kind = "linear";
-    scale.lo = lo; scale.hi = hi;
-    scale.values = values;
+    scale.kind = "quantile"; scale.breaks = breaks; scale.N = N; scale.values = values;
     return scale;
   }
+  const [lo, hi] = d3.extent(values);
+  const scale = d3.scaleSequential(palette).domain([lo, hi]);
+  scale.kind = "linear"; scale.lo = lo; scale.hi = hi; scale.values = values;
+  return scale;
 }
 
-let currentScale = null;
-
-function styleFor(props) {
-  const v = props[currentKey];
-  if (v == null || !isFinite(v)) {
-    return { fillColor: "#dcd9cf", color: "#bdbab0", weight: 0.3, fillOpacity: 0.7 };
-  }
-  return {
-    fillColor: currentScale(v),
-    color: "#ffffff",
-    weight: 0.3,
-    fillOpacity: 0.86,
+// ===== bivariate binning =====
+function bin3(values) {
+  const sorted = values.filter(v => v != null && isFinite(v)).slice().sort(d3.ascending);
+  const q1 = d3.quantileSorted(sorted, 1/3);
+  const q2 = d3.quantileSorted(sorted, 2/3);
+  return v => {
+    if (v == null || !isFinite(v)) return null;
+    if (v < q1) return 0;
+    if (v < q2) return 1;
+    return 2;
   };
 }
-
-function highlightStyle() {
-  return { color: "#111", weight: 1.6, fillOpacity: 0.95 };
+function rebuildBivBins() {
+  binX = bin3(GEO.features.map(f => f.properties[xKey]));
+  binY = bin3(GEO.features.map(f => f.properties[yKey]));
 }
 
-// ---------- tooltip & detail ----------
+// ===== styling =====
+function styleSingle(props) {
+  const v = props[currentKey];
+  if (v == null || !isFinite(v) || !currentScale) {
+    return { fillColor: "#dcd9cf", color: "#bdbab0", weight: 0.3, fillOpacity: 0.7 };
+  }
+  return { fillColor: currentScale(v), color: "#fff", weight: 0.3, fillOpacity: 0.86 };
+}
+function styleBiv(props) {
+  const bx = binX(props[xKey]);
+  const by = binY(props[yKey]);
+  if (bx == null || by == null) {
+    return { fillColor: "#dcd9cf", color: "#bdbab0", weight: 0.3, fillOpacity: 0.7 };
+  }
+  return { fillColor: bivCell(bx, by), color: "#fff", weight: 0.25, fillOpacity: 0.9 };
+}
+function styleFor(props) { return mode === "single" ? styleSingle(props) : styleBiv(props); }
+function highlightStyle() { return { color: "#111", weight: 1.6, fillOpacity: 0.96 }; }
+
+// ===== tooltips =====
+function metaOf(k) { return VARS.find(v => v.key === k); }
+
 function tooltipHtml(props) {
-  const meta = VARS.find(v => v.key === currentKey);
-  const val = props[currentKey];
-  const valStr = fmtValue(val, meta.fmt);
-  const units = meta.units && meta.fmt !== "usd" && meta.fmt !== "pct" ? `<span class="units">${meta.units}</span>` : "";
-  return `<div class="tract-tooltip">
-    <div class="ttl">${props.borough || ""} · Tract ${props.ct_label || props.geoid}</div>
-    <div class="nta">${props.nta || ""}</div>
-    <div><span class="val">${valStr}</span>${units}</div>
-  </div>`;
+  if (mode === "single") {
+    const meta = metaOf(currentKey);
+    const val = props[currentKey];
+    const valStr = fmtValue(val, meta.fmt);
+    const units = meta.units && meta.fmt !== "usd" && meta.fmt !== "pct" ? `<span class="units">${meta.units}</span>` : "";
+    return `<div class="tract-tooltip">
+      <div class="ttl">${props.borough || ""} · Tract ${props.ct_label || props.geoid}</div>
+      <div class="nta">${props.nta || ""}</div>
+      <div><span class="val">${valStr}</span>${units}</div>
+    </div>`;
+  } else {
+    const mx = metaOf(xKey), my = metaOf(yKey);
+    return `<div class="tract-tooltip">
+      <div class="ttl">${props.borough || ""} · Tract ${props.ct_label || props.geoid}</div>
+      <div class="nta">${props.nta || ""}</div>
+      <div class="pair"><span>${mx.label}</span><span class="v">${fmtValue(props[xKey], mx.fmt)}</span></div>
+      <div class="pair"><span>${my.label}</span><span class="v">${fmtValue(props[yKey], my.fmt)}</span></div>
+    </div>`;
+  }
 }
 
+// ===== detail panel (single-var only) =====
 function renderDetail(props) {
   document.getElementById("detail-panel").classList.add("open");
   document.getElementById("det-title").textContent = `${props.borough || "NYC"} · Tract ${props.ct_label || props.geoid}`;
   document.getElementById("det-nta").textContent = props.nta || "";
-  // Group rows by VARS group
   const groups = {};
-  VARS.forEach(v => {
-    if (!groups[v.group]) groups[v.group] = [];
-    groups[v.group].push(v);
-  });
+  VARS.forEach(v => { (groups[v.group] = groups[v.group] || []).push(v); });
   let html = "";
   Object.keys(groups).forEach(g => {
     html += `<div class="det-group">${g}</div>`;
     groups[g].forEach(v => {
       const val = props[v.key];
-      html += `<div class="det-row"><span>${v.label}</span><span class="v">${fmtValue(val, v.fmt)}${v.fmt === "pct" || v.fmt === "usd" ? "" : (v.units ? " " + v.units : "")}</span></div>`;
+      const tail = v.fmt === "pct" || v.fmt === "usd" ? "" : (v.units ? " " + v.units : "");
+      html += `<div class="det-row"><span>${v.label}</span><span class="v">${fmtValue(val, v.fmt)}${tail}</span></div>`;
     });
   });
   document.getElementById("det-body").innerHTML = html;
 }
-
 document.getElementById("detail-close").addEventListener("click", () => {
   document.getElementById("detail-panel").classList.remove("open");
   if (selectedGeoid != null && geoLayer) {
@@ -363,9 +454,9 @@ document.getElementById("detail-close").addEventListener("click", () => {
   }
 });
 
-// ---------- legend ----------
-function renderLegend() {
-  const meta = VARS.find(v => v.key === currentKey);
+// ===== legends =====
+function renderSingleLegend() {
+  const meta = metaOf(currentKey);
   const el = document.getElementById("legend");
   if (!currentScale) { el.innerHTML = ""; return; }
   let html = "";
@@ -373,26 +464,57 @@ function renderLegend() {
     const breaks = currentScale.breaks;
     const N = currentScale.N;
     const palette = paletteFor(meta);
+    const sorted = currentScale.values.slice().sort(d3.ascending);
     for (let i = 0; i < N; i++) {
-      const lo = i === 0 ? d3.min(currentScale.values) : breaks[i-1];
-      const hi = i === N - 1 ? d3.max(currentScale.values) : breaks[i];
+      const lo = i === 0 ? sorted[0] : breaks[i-1];
+      const hi = i === N - 1 ? sorted[sorted.length-1] : breaks[i];
       const color = palette((i + 0.5) / N);
       html += `<div class="row"><span class="swatch" style="background:${color}"></span>${fmtValue(lo, meta.fmt)} – ${fmtValue(hi, meta.fmt)}</div>`;
     }
   } else {
-    // gradient + min/max
     const palette = paletteFor(meta);
     const stops = [];
     for (let i = 0; i <= 10; i++) stops.push(palette(i / 10));
     html += `<div class="row"><span style="display:inline-block;width:100%;height:12px;background:linear-gradient(to right,${stops.join(",")});border-radius:2px;"></span></div>`;
     html += `<div class="row" style="justify-content:space-between;"><span>${fmtValue(currentScale.lo, meta.fmt)}</span><span>${fmtValue(currentScale.hi, meta.fmt)}</span></div>`;
   }
-  // missing
   html += `<div class="row" style="margin-top:6px;"><span class="swatch" style="background:#dcd9cf"></span>No data</div>`;
   el.innerHTML = html;
 }
 
-// ---------- variable picker ----------
+function renderBivLegend() {
+  const mx = metaOf(xKey), my = metaOf(yKey);
+  const xs = GEO.features.map(f => f.properties[xKey]).filter(v => v != null && isFinite(v)).sort(d3.ascending);
+  const ys = GEO.features.map(f => f.properties[yKey]).filter(v => v != null && isFinite(v)).sort(d3.ascending);
+  const xlo = fmtValue(xs[0], mx.fmt), xhi = fmtValue(xs[xs.length-1], mx.fmt);
+  const ylo = fmtValue(ys[0], my.fmt), yhi = fmtValue(ys[ys.length-1], my.fmt);
+  let grid = '<table><tbody>';
+  for (let y = 2; y >= 0; y--) {
+    grid += '<tr>';
+    for (let x = 0; x < 3; x++) grid += `<td style="background:${bivCell(x,y)}"></td>`;
+    grid += '</tr>';
+  }
+  grid += '</tbody></table>';
+  document.getElementById("biv-legend").innerHTML = `
+    <div style="display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--ink-2)">
+      <div style="display:flex;flex-direction:column;justify-content:space-between;height:66px;font-size:9.5px;color:var(--muted);text-align:right;padding-top:1px">
+        <span>${yhi}</span><span>${ylo}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-start;gap:2px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;color:var(--ink-2);white-space:nowrap;height:66px;display:flex;align-items:center">↑ ${my.label}</div>
+          ${grid}
+        </div>
+        <div style="display:flex;justify-content:space-between;width:66px;margin-left:18px;font-size:9.5px;color:var(--muted)">
+          <span>${xlo}</span><span>${xhi}</span>
+        </div>
+        <div style="margin-left:18px;font-size:10px;color:var(--ink-2)">→ ${mx.label}</div>
+      </div>
+    </div>
+    <div style="font-size:10.5px;color:var(--muted);margin-top:8px;line-height:1.35">Each axis split into thirds — roughly 775 tracts per third. Gray = missing on either variable.</div>`;
+}
+
+// ===== single-var picker =====
 function buildVarList() {
   const root = document.getElementById("var-list");
   const groups = {};
@@ -407,60 +529,133 @@ function buildVarList() {
   });
   root.innerHTML = html;
   root.querySelectorAll(".var-btn").forEach(b => {
-    b.addEventListener("click", () => setVariable(b.dataset.key));
+    b.addEventListener("click", () => setSingleVar(b.dataset.key));
   });
 }
-
-function setActiveBtn() {
+function setSingleActiveBtn() {
   document.querySelectorAll(".var-btn").forEach(b => {
     b.classList.toggle("active", b.dataset.key === currentKey);
   });
 }
 
-function updateMeta() {
-  const m = VARS.find(v => v.key === currentKey);
-  document.getElementById("cur-label").textContent = m.label;
-  document.getElementById("cur-desc").textContent = m.desc;
-  document.getElementById("cur-src").textContent = `Source: ACS ${RELEASE && RELEASE.years || "5-year"} · ${m.units}`;
+// ===== bivariate picker / presets =====
+function buildPresets() {
+  const root = document.getElementById("presets");
+  root.innerHTML = PRESETS.map((p, i) => `
+    <button class="preset" data-x="${p.x}" data-y="${p.y}" data-i="${i}">
+      <div class="nm">${i+1}. ${p.name}</div>
+      <div class="axes">${metaOf(p.x).label} × ${metaOf(p.y).label}</div>
+    </button>`).join("");
+  root.querySelectorAll(".preset").forEach(b => {
+    b.addEventListener("click", () => {
+      const p = PRESETS[+b.dataset.i];
+      setBivPair(p.x, p.y, p.story);
+    });
+  });
+}
+function buildBivPickers() {
+  const sx = document.getElementById("pick-x"), sy = document.getElementById("pick-y");
+  const groups = {};
+  VARS.forEach(v => { (groups[v.group] = groups[v.group] || []).push(v); });
+  function opts() {
+    let h = "";
+    Object.keys(groups).forEach(g => {
+      h += `<optgroup label="${g}">`;
+      groups[g].forEach(v => { h += `<option value="${v.key}">${v.label}</option>`; });
+      h += `</optgroup>`;
+    });
+    return h;
+  }
+  sx.innerHTML = opts(); sy.innerHTML = opts();
+  sx.addEventListener("change", () => setBivPair(sx.value, yKey, ""));
+  sy.addEventListener("change", () => setBivPair(xKey, sy.value, ""));
 }
 
-function setVariable(key) {
+// ===== mode + variable setters =====
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll("#mode-toggle button").forEach(b => b.classList.toggle("active", b.dataset.mode === m));
+  const single = m === "single";
+  document.getElementById("single-pane").classList.toggle("hidden", !single);
+  document.getElementById("biv-pane").classList.toggle("hidden", single);
+  document.getElementById("single-legend-wrap").classList.toggle("hidden", !single);
+  document.getElementById("biv-legend").classList.toggle("hidden", single);
+  document.getElementById("biv-story").classList.toggle("hidden", single);
+  if (!single) document.getElementById("detail-panel").classList.remove("open");
+  applyCurrent();
+}
+
+function setSingleVar(key) {
   currentKey = key;
-  currentScale = buildScale(VARS.find(v => v.key === key));
-  setActiveBtn();
-  updateMeta();
-  renderLegend();
+  currentScale = buildScale(metaOf(key));
+  setSingleActiveBtn();
+  applyCurrent();
+}
+
+function setBivPair(x, y, story) {
+  xKey = x; yKey = y; currentStory = story || "";
+  rebuildBivBins();
+  document.querySelectorAll(".preset").forEach(b => {
+    b.classList.toggle("active", b.dataset.x === x && b.dataset.y === y);
+  });
+  document.getElementById("pick-x").value = x;
+  document.getElementById("pick-y").value = y;
+  applyCurrent();
+}
+
+function applyCurrent() {
+  if (mode === "single") {
+    const m = metaOf(currentKey);
+    document.getElementById("cur-title").textContent = m.label;
+    document.getElementById("cur-desc").textContent = m.desc;
+    document.getElementById("cur-src").textContent = `Source: ACS 2020–2024 5-year · ${m.units}`;
+    renderSingleLegend();
+  } else {
+    const mx = metaOf(xKey), my = metaOf(yKey);
+    document.getElementById("cur-title").textContent = `${mx.label} × ${my.label}`;
+    document.getElementById("cur-desc").innerHTML = `<b>X →</b> ${mx.desc}<br><b>Y ↑</b> ${my.desc}`;
+    document.getElementById("cur-src").textContent = `Source: ACS 2020–2024 5-year`;
+    document.getElementById("biv-story").textContent = currentStory ||
+      "Each axis is split into thirds across all NYC tracts. The 3×3 cell tells you where this tract falls on both variables at once.";
+    renderBivLegend();
+  }
   if (geoLayer) geoLayer.setStyle(f => styleFor(f.properties));
 }
 
-// scale mode toggle
+// scale-mode toggle (single only)
 document.querySelectorAll("#scale-toggle button").forEach(b => {
   b.addEventListener("click", () => {
     scaleMode = b.dataset.scale;
     document.querySelectorAll("#scale-toggle button").forEach(x => x.classList.toggle("active", x === b));
-    currentScale = buildScale(VARS.find(v => v.key === currentKey));
-    renderLegend();
+    currentScale = buildScale(metaOf(currentKey));
+    renderSingleLegend();
     if (geoLayer) geoLayer.setStyle(f => styleFor(f.properties));
   });
 });
 
-// ---------- map ----------
+// mode-toggle handler
+document.querySelectorAll("#mode-toggle button").forEach(b => {
+  b.addEventListener("click", () => setMode(b.dataset.mode));
+});
+
+// ===== map =====
 function initMap() {
   map = L.map("map", { zoomControl: true, preferCanvas: true }).setView([40.7128, -73.95], 11);
   L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> · <a href="https://carto.com/attributions">CARTO</a>',
     subdomains: 'abcd', maxZoom: 18,
   }).addTo(map);
-
   geoLayer = L.geoJSON(GEO, {
     style: f => styleFor(f.properties),
     onEachFeature: (feat, layer) => {
-      layer.bindTooltip(() => tooltipHtml(feat.properties), { sticky: true, className: "tract-tip-wrap", direction: "auto", opacity: 1 });
+      layer.bindTooltip(() => tooltipHtml(feat.properties),
+        { sticky: true, className: "tract-tip-wrap", direction: "auto", opacity: 1 });
       layer.on("mouseover", () => layer.setStyle(highlightStyle()));
       layer.on("mouseout", () => {
         if (feat.properties.geoid !== selectedGeoid) geoLayer.resetStyle(layer);
       });
       layer.on("click", () => {
+        if (mode !== "single") return;
         if (selectedGeoid) {
           geoLayer.eachLayer(l => { if (l.feature.properties.geoid === selectedGeoid) geoLayer.resetStyle(l); });
         }
@@ -470,33 +665,28 @@ function initMap() {
       });
     },
   }).addTo(map);
-
-  // Reference labels (street names) on top
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png", {
-    subdomains: 'abcd', maxZoom: 18, pane: 'shadowPane', opacity: 0.85,
-  }).addTo(map);
-
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",
+    { subdomains: 'abcd', maxZoom: 18, pane: 'shadowPane', opacity: 0.85 }).addTo(map);
   map.fitBounds(geoLayer.getBounds(), { padding: [10, 10] });
 }
 
-// Override leaflet tooltip default styling — we already produce styled HTML
-const tipStyle = document.createElement("style");
-tipStyle.textContent = `.leaflet-tooltip.tract-tip-wrap { background: transparent; border: 0; box-shadow: none; padding: 0; }
-.leaflet-tooltip.tract-tip-wrap::before { display: none; }`;
-document.head.appendChild(tipStyle);
-
-// ---------- bootstrap ----------
+// ===== bootstrap =====
 Promise.all([
   fetch("variables.json").then(r => r.json()),
   fetch("tracts.geojson").then(r => r.json()),
   fetch("release.json").then(r => r.json()).catch(() => ({})),
 ]).then(([vars, geo, release]) => {
-  VARS = vars;
-  GEO = geo;
-  RELEASE = release;
+  VARS = vars; GEO = geo; RELEASE = release;
   if (release && release.years) document.getElementById("release-name").textContent = release.years;
   buildVarList();
-  setVariable(currentKey);
+  buildPresets();
+  buildBivPickers();
+  currentScale = buildScale(metaOf(currentKey));
+  setSingleActiveBtn();
+  rebuildBivBins();
+  document.getElementById("pick-x").value = xKey;
+  document.getElementById("pick-y").value = yKey;
+  applyCurrent();
   initMap();
 });
 </script>
