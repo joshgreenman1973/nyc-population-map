@@ -322,6 +322,64 @@
     padding: 8px 12px; font-size: 12px; color: var(--muted);
   }
 
+  /* Floating bivariate legend over the map */
+  #biv-map-legend {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    z-index: 900;
+    background: rgba(255,255,255,0.97);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 12px 14px;
+    box-shadow: var(--shadow);
+    font-family: var(--sans);
+    color: var(--ink);
+    max-width: 280px;
+  }
+  #biv-map-legend.hidden { display: none; }
+  #biv-map-legend .ml-cap {
+    font-size: 11px; color: var(--ink-2);
+    margin-bottom: 5px;
+    line-height: 1.3;
+    max-width: 200px;
+  }
+  #biv-map-legend .ml-cap b { color: var(--ink); }
+  #biv-map-legend .ml-row { display: flex; align-items: stretch; gap: 6px; }
+  #biv-map-legend .ml-yrange {
+    display: flex; flex-direction: column; justify-content: space-between;
+    width: 56px;
+    font-size: 10.5px; color: var(--muted);
+    text-align: right; font-variant-numeric: tabular-nums;
+    padding: 1px 0;
+  }
+  #biv-map-legend table { border-collapse: collapse; flex: 0 0 auto; }
+  #biv-map-legend td {
+    width: 28px; height: 28px;
+    border: 1px solid rgba(0,0,0,0.04);
+    padding: 0;
+  }
+  #biv-map-legend .ml-xrow {
+    margin-top: 3px; padding-left: 62px;
+  }
+  #biv-map-legend .ml-xrange {
+    display: flex; justify-content: space-between;
+    width: 90px;
+    font-size: 10.5px; color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  #biv-map-legend .ml-xcap {
+    font-size: 11px; color: var(--ink-2);
+    margin-top: 3px;
+    padding-left: 62px;
+    max-width: 200px;
+    line-height: 1.3;
+  }
+  #biv-map-legend .ml-xcap b { color: var(--ink); }
+  @media (max-width: 860px) {
+    #biv-map-legend { right: 8px; bottom: 8px; padding: 10px 12px; }
+  }
+
   /* Tract pin marker for search-found tract */
   .search-pin {
     background: var(--ink);
@@ -400,6 +458,7 @@
   </aside>
   <main style="position:relative;">
     <div id="map"></div>
+    <div id="biv-map-legend" class="hidden"></div>
     <div id="search-box">
       <svg id="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
       <input id="search-input" type="text" placeholder="Search a NYC address or place…" autocomplete="off" spellcheck="false">
@@ -660,7 +719,7 @@ function renderBivLegend() {
     grid += '</tr>';
   }
   grid += '</tbody></table>';
-  document.getElementById("biv-legend").innerHTML = `
+  const sidebarHtml = `
     <div class="biv-cap">↑ <b>${my.label}</b></div>
     <div class="biv-row">
       <div class="biv-yrange"><span>${yhi}</span><span>${ylo}</span></div>
@@ -669,6 +728,17 @@ function renderBivLegend() {
     <div class="biv-xrow"><div class="biv-xrange"><span>${xlo}</span><span>${xhi}</span></div></div>
     <div class="biv-xcap">→ <b>${mx.label}</b></div>
     <div class="biv-note">Each axis split into thirds — about 775 tracts per third. Gray = missing on either variable.</div>`;
+  document.getElementById("biv-legend").innerHTML = sidebarHtml;
+
+  // Floating legend on the map — same data, slightly larger swatches.
+  document.getElementById("biv-map-legend").innerHTML = `
+    <div class="ml-cap">↑ <b>${my.label}</b></div>
+    <div class="ml-row">
+      <div class="ml-yrange"><span>${yhi}</span><span>${ylo}</span></div>
+      ${grid}
+    </div>
+    <div class="ml-xrow"><div class="ml-xrange"><span>${xlo}</span><span>${xhi}</span></div></div>
+    <div class="ml-xcap">→ <b>${mx.label}</b></div>`;
 }
 
 // ===== single-var picker =====
@@ -788,6 +858,7 @@ function setMode(m) {
   document.getElementById("single-legend-wrap").classList.toggle("hidden", !single);
   document.getElementById("biv-legend").classList.toggle("hidden", single);
   document.getElementById("biv-story").classList.toggle("hidden", single);
+  document.getElementById("biv-map-legend").classList.toggle("hidden", single);
   if (!single) document.getElementById("detail-panel").classList.remove("open");
   applyCurrent();
 }
