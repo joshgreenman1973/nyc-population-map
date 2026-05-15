@@ -685,13 +685,11 @@ for nf in nta_base["features"]:
         else: rec[key + '_moe'] = round(moe_val, 2)
 
     # Sum DOE schools across member tracts
-    schools = 0
     doe_k12 = 0
     pop_2020_sum = 0
     has_2020 = False
     for g in member_tracts:
         t_rec = derived.get(g, {})
-        schools += t_rec.get("doe_public_schools") or 0
         doe_k12 += t_rec.get("doe_public_k12_enrolled") or 0
         p20 = t_rec.get("pop_2020")
         if p20 is not None:
