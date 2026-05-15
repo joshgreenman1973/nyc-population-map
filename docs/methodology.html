@@ -70,6 +70,7 @@
       <tr><td>Median rent burden</td><td>B25071_001 (median rent as % of household income)</td></tr>
       <tr><td>Bachelor's+ / HS only</td><td>Σ B15003_022–025 / Σ B15003_017–018 ÷ B15003_001</td></tr>
       <tr><td>Foreign-born</td><td>B05002_013 ÷ B05002_001</td></tr>
+      <tr><td>Not a U.S. citizen</td><td>B05002_021 ÷ B05002_001</td></tr>
       <tr><td>Non-English at home</td><td>(C16001_001 − C16001_002) ÷ C16001_001</td></tr>
       <tr><td>In labor force (16+)</td><td>B23025_002 ÷ B23025_001</td></tr>
       <tr><td>Commute mode shares</td><td>B08301_010 / 019 / 021 ÷ B08301_001</td></tr>
@@ -106,6 +107,19 @@
     <li>A <strong>"Fade unreliable estimates"</strong> checkbox in the sidebar adds a 25% opacity overlay and dashed border to any tract whose value falls in the "unreliable" tier — so users can see uncertainty visually without losing the underlying data.</li>
   </ul>
   <p>MOEs for derived shares are propagated using the Census Bureau's standard formulas from the <a href="https://www.census.gov/content/dam/Census/library/publications/2020/acs/acs_general_handbook_2020.pdf" target="_blank" rel="noopener">ACS General Handbook (Appendix 3)</a>: <em>moe(p) = √[moe(x)² − p² · moe(y)²] / y</em> for proportions where the numerator is a subset of the denominator (with a fall-back to the independent-ratio formula when the radicand is negative). Sum-of-cells MOEs use √Σmoe². Medians use the published MOE directly.</p>
+
+  <h2>The undocumented-population proxy</h2>
+  <p>The U.S. Census Bureau does not ask about immigration status, so there is no direct tract-level count of undocumented residents. Every published "undocumented by tract" figure is a model output, not a measurement. The closest publicly available variable that gets at this population without modeling assumptions is <strong>B05002_021 — "Foreign-born, not a U.S. citizen."</strong> We surface it as "Not a U.S. citizen."</p>
+  <p>This variable <em>over-counts</em> the undocumented population because it also includes:</p>
+  <ul>
+    <li>Lawful permanent residents (green-card holders) who haven't naturalized</li>
+    <li>Visa holders — students (F-1), workers (H-1B, L-1, O-1, etc.), exchange visitors (J-1), and others</li>
+    <li>Refugees, asylees, and other humanitarian admissions</li>
+    <li>TPS (Temporary Protected Status) recipients</li>
+    <li>DACA recipients (technically without status but with deferred action)</li>
+  </ul>
+  <p>Calibrating it to undocumented requires a multiplier. National estimates (Pew, MPI, CMS): roughly a quarter of all foreign-born residents are undocumented. For NYC specifically, the <a href="https://cmsny.org" target="_blank" rel="noopener">Center for Migration Studies</a> estimates roughly a third of non-citizens are undocumented, and the share varies by country-of-origin neighborhood (lower in Soviet-era Russian-speaking enclaves, higher in some Latin American and West African corridors). A tract with 1,000 "Not a U.S. citizen" residents likely contains around 300–400 undocumented residents, with substantial neighborhood-level variation.</p>
+  <p>This map does not multiply by that factor — we show the raw proxy and ask the reader to understand it as such. CMS publishes more authoritative estimates at sub-city geographies (Community District level); when this map grows a Community District aggregation, those will be layered in directly.</p>
 
   <h2>What is <em>not</em> yet here</h2>
   <ul>

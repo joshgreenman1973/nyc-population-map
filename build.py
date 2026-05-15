@@ -261,6 +261,7 @@ for tract, d in all_data.items():
         "pct_hs_only": pct(hs_only, edu),
 
         "pct_foreign_born": pct(get(d, "B05002013"), fb_total),
+        "pct_non_citizen":  pct(get(d, "B05002021"), fb_total),  # foreign-born non-citizens as a share of all residents
         "pct_non_english_home": pct(non_english, lang_total),
 
         "pct_in_labor_force": pct(lf_in, lf_total),
@@ -341,6 +342,7 @@ for tract, d in all_data.items():
         "pct_hs_only":          moe_pct(hs_only,   hs_only_moe,   edu, get(m,"B15003001")),
         # Origin / language
         "pct_foreign_born":     moe_pct(get(d,"B05002013"), get(m,"B05002013"), fb_total, get(m,"B05002001")),
+        "pct_non_citizen":      moe_pct(get(d,"B05002021"), get(m,"B05002021"), fb_total, get(m,"B05002001")),
         "pct_non_english_home": moe_pct(non_english, non_eng_moe, lang_total, get(m,"C16001001")),
         # Work
         "pct_in_labor_force":   moe_pct(lf_in, get(m,"B23025002"), lf_total, get(m,"B23025001")),
@@ -521,6 +523,8 @@ VARS = [
     # --- 3. Origin & language ---
     ("Origin & language", "pct_foreign_born", "Foreign-born", "pct", "%",
      "Share of residents born outside the United States, not counting those born abroad to American parents (who Census classifies as native)."),
+    ("Origin & language", "pct_non_citizen", "Not a U.S. citizen", "pct", "%",
+     "Share of residents who are foreign-born and have not naturalized — the closest publicly available proxy for the undocumented population, but it OVER-counts that population. It includes lawful permanent residents (green-card holders), visa holders (students, H-1B, etc.), refugees, asylees, and TPS recipients. Nationally about a quarter of foreign-born residents are undocumented; in NYC, Center for Migration Studies estimates roughly a third of non-citizens are undocumented. See methodology for the full caveat."),
     ("Origin & language", "pct_non_english_home", "Non-English at home", "pct", "%",
      "Share of residents 5+ who speak a language other than English at home."),
 
