@@ -1,0 +1,284 @@
+--------------------------------------------------------------------------------
+Codebook for NHGIS data file 'nhgis0003_ds258_2020_tract'
+--------------------------------------------------------------------------------
+ 
+Contents
+    - Data Summary
+    - Data Dictionary
+    - Citation and Use
+ 
+Additional documentation on NHGIS data sources is available at: 
+    https://www.nhgis.org/documentation/tabular-data 
+ 
+--------------------------------------------------------------------------------
+Data Summary
+--------------------------------------------------------------------------------
+ 
+Year:             2020
+Geographic level: Census Tract (by State--County)
+Extent:           New York
+Dataset:          2020 Census: DHC - P & H Tables [Blocks & Larger Areas]
+   NHGIS code:    2020_DHCa
+   NHGIS ID:      ds258
+Breakdown(s):     Geographic Component:
+                     Total area (00)
+ 
+Tables:
+ 
+1. Hispanic or Latino, and Not Hispanic or Latino by Race
+   Universe:    Total population
+   Source code: P9
+   NHGIS code:  U7P
+ 
+2. Sex by Age for Selected Age Categories
+   Universe:    Total population
+   Source code: P12
+   NHGIS code:  U7S
+ 
+--------------------------------------------------------------------------------
+Data Dictionary
+--------------------------------------------------------------------------------
+ 
+Context Fields 
+        GISJOIN:     GIS Join Match Code
+        YEAR:        Data File Year
+        STUSAB:      State/US-Abbreviation (USPS)
+        GEOID:       Geographic Record Identifier
+        GEOCODE:     Geographic Code Identifier
+        REGIONA:     Region Code
+        DIVISIONA:   Division Code
+        STATE:       State (FIPS) Name
+        STATEA:      State (FIPS) Code
+        COUNTY:      County (FIPS) Name
+        COUNTYA:     County (FIPS) Code
+        COUSUBA:     County Subdivision (FIPS) Code
+        COUSUBCC:    FIPS County Subdivision Class Code
+        SUBMCDA:     Subminor Civil Division (FIPS) Code
+        CONCITA:     Consolidated City (FIPS) Code
+        PLACEA:      Place (FIPS) Code
+        PLACECC:     FIPS Place Class Code
+        TRACTA:      Census Tract Code
+        BLKGRPA:     Block Group Code
+        BLOCKA:      Block Code
+        AIANHHA:     American Indian Area/Alaska Native Area/Hawaiian Home Land (Census) Code
+        RES_ONLYA:   American Indian Area/Alaska Native Area (Reservation or Statistical Entity Only) Code
+        TRUSTA:      American Indian Area (Off-Reservation Trust Land Only)/Hawaiian Home Land Code
+        AIANHHCC:    FIPS American Indian Area/Alaska Native Area/Hawaiian Home Land Class Code
+        AITSA:       American Indian Tribal Subdivision (Census) Code
+        TTRACTA:     Tribal Census Tract Code
+        TBLKGRPA:    Tribal Block Group Code
+        ANRCA:       Alaska Native Regional Corporation (FIPS) Code
+        CBSAA:       Metropolitan Statistical Area/Micropolitan Statistical Area Code
+        MEMI:        Metropolitan/Micropolitan Indicator
+        CSAA:        Combined Statistical Area Code
+        METDIVA:     Metropolitan Division Code
+        NECTAA:      New England City and Town Area Code
+        NMEMI:       NECTA Metropolitan/Micropolitan Indicator
+        CNECTAA:     Combined New England City and Town Area Code
+        NECTADIVA:   New England City and Town Area Division Code
+        CBSAPCI:     Metropolitan Statistical Area/Micropolitan Statistical Area Principal City Indicator
+        NECTAPCI:    New England City and Town Area Principal City Indicator
+        UAA:         Urban Area Code
+        URA:         Urban/Rural Code
+        CD116A:      Congressional District (116th) Code
+        SLDU18A:     State Legislative District (Upper Chamber) (2018) Code
+        SLDL18A:     State Legislative District (Lower Chamber) (2018) Code
+        VTD:         Voting District
+        VTDI:        Voting District Indicator
+        ZCTAA:       ZIP Code Tabulation Area (5-Digit) Code
+        SDELMA:      School District (Elementary) Code
+        SDSECA:      School District (Secondary) Code
+        SDUNIA:      School District (Unified) Code
+        PUMA:        Public Use Microdata Area
+        AREALAND:    Area (Land)
+        AREAWATR:    Area (Water)
+        BASENAME:    Area Base Name
+        NAME:        Area Name-Legal/Statistical Area Description (LSAD) Term-Part Indicator
+        FUNCSTAT:    Functional Status Code
+        INTPTLAT:    Internal Point (Latitude)
+        INTPTLON:    Internal Point (Longitude)
+        LSADC:       Legal/Statistical Area Description Code
+        UGA:         Urban Growth Area
+ 
+Breakdown:
+    Geographic Component: Total area (00)
+ 
+    Table 1:     Hispanic or Latino, and Not Hispanic or Latino by Race
+    Universe:    Total population
+    Source code: P9
+    NHGIS code:  U7P
+        U7P001:      Total
+        U7P002:      Hispanic or Latino
+        U7P003:      Not Hispanic or Latino
+        U7P004:      Not Hispanic or Latino: Population of one race
+        U7P005:      Not Hispanic or Latino: Population of one race: White alone
+        U7P006:      Not Hispanic or Latino: Population of one race: Black or African American alone
+        U7P007:      Not Hispanic or Latino: Population of one race: American Indian and Alaska Native alone
+        U7P008:      Not Hispanic or Latino: Population of one race: Asian alone
+        U7P009:      Not Hispanic or Latino: Population of one race: Native Hawaiian and Other Pacific Islander alone
+        U7P010:      Not Hispanic or Latino: Population of one race: Some Other Race alone
+        U7P011:      Not Hispanic or Latino: Population of two or more races
+        U7P012:      Not Hispanic or Latino: Population of two or more races: Population of two races
+        U7P013:      Not Hispanic or Latino: Population of two or more races: Population of two races: White; Black or African American
+        U7P014:      Not Hispanic or Latino: Population of two or more races: Population of two races: White; American Indian and Alaska Native
+        U7P015:      Not Hispanic or Latino: Population of two or more races: Population of two races: White; Asian
+        U7P016:      Not Hispanic or Latino: Population of two or more races: Population of two races: White; Native Hawaiian and Other Pacific Islander
+        U7P017:      Not Hispanic or Latino: Population of two or more races: Population of two races: White; Some Other Race
+        U7P018:      Not Hispanic or Latino: Population of two or more races: Population of two races: Black or African American; American Indian and Alaska Native
+        U7P019:      Not Hispanic or Latino: Population of two or more races: Population of two races: Black or African American; Asian
+        U7P020:      Not Hispanic or Latino: Population of two or more races: Population of two races: Black or African American; Native Hawaiian and Other Pacific Islander
+        U7P021:      Not Hispanic or Latino: Population of two or more races: Population of two races: Black or African American; Some Other Race
+        U7P022:      Not Hispanic or Latino: Population of two or more races: Population of two races: American Indian and Alaska Native; Asian
+        U7P023:      Not Hispanic or Latino: Population of two or more races: Population of two races: American Indian and Alaska Native; Native Hawaiian and Other Pacific Islander
+        U7P024:      Not Hispanic or Latino: Population of two or more races: Population of two races: American Indian and Alaska Native; Some Other Race
+        U7P025:      Not Hispanic or Latino: Population of two or more races: Population of two races: Asian; Native Hawaiian and Other Pacific Islander
+        U7P026:      Not Hispanic or Latino: Population of two or more races: Population of two races: Asian; Some Other Race
+        U7P027:      Not Hispanic or Latino: Population of two or more races: Population of two races: Native Hawaiian and Other Pacific Islander; Some Other Race
+        U7P028:      Not Hispanic or Latino: Population of two or more races: Population of three races
+        U7P029:      Not Hispanic or Latino: Population of two or more races: Population of three races: White; Black or African American; American Indian and Alaska Native
+        U7P030:      Not Hispanic or Latino: Population of two or more races: Population of three races: White; Black or African American; Asian
+        U7P031:      Not Hispanic or Latino: Population of two or more races: Population of three races: White; Black or African American; Native Hawaiian and Other Pacific Islander
+        U7P032:      Not Hispanic or Latino: Population of two or more races: Population of three races: White; Black or African American; Some Other Race
+        U7P033:      Not Hispanic or Latino: Population of two or more races: Population of three races: White; American Indian and Alaska Native; Asian
+        U7P034:      Not Hispanic or Latino: Population of two or more races: Population of three races: White; American Indian and Alaska Native; Native Hawaiian and Other Pacific Islander
+        U7P035:      Not Hispanic or Latino: Population of two or more races: Population of three races: White; American Indian and Alaska Native; Some Other Race
+        U7P036:      Not Hispanic or Latino: Population of two or more races: Population of three races: White; Asian; Native Hawaiian and Other Pacific Islander
+        U7P037:      Not Hispanic or Latino: Population of two or more races: Population of three races: White; Asian; Some Other Race
+        U7P038:      Not Hispanic or Latino: Population of two or more races: Population of three races: White; Native Hawaiian and Other Pacific Islander; Some Other Race
+        U7P039:      Not Hispanic or Latino: Population of two or more races: Population of three races: Black or African American; American Indian and Alaska Native; Asian
+        U7P040:      Not Hispanic or Latino: Population of two or more races: Population of three races: Black or African American; American Indian and Alaska Native; Native Hawaiian and Other Pacific Islander
+        U7P041:      Not Hispanic or Latino: Population of two or more races: Population of three races: Black or African American; American Indian and Alaska Native; Some Other Race
+        U7P042:      Not Hispanic or Latino: Population of two or more races: Population of three races: Black or African American; Asian; Native Hawaiian and Other Pacific Islander
+        U7P043:      Not Hispanic or Latino: Population of two or more races: Population of three races: Black or African American; Asian; Some Other Race
+        U7P044:      Not Hispanic or Latino: Population of two or more races: Population of three races: Black or African American; Native Hawaiian and Other Pacific Islander; Some Other Race
+        U7P045:      Not Hispanic or Latino: Population of two or more races: Population of three races: American Indian and Alaska Native; Asian; Native Hawaiian and Other Pacific Islander
+        U7P046:      Not Hispanic or Latino: Population of two or more races: Population of three races: American Indian and Alaska Native; Asian; Some Other Race
+        U7P047:      Not Hispanic or Latino: Population of two or more races: Population of three races: American Indian and Alaska Native; Native Hawaiian and Other Pacific Islander; Some Other Race
+        U7P048:      Not Hispanic or Latino: Population of two or more races: Population of three races: Asian; Native Hawaiian and Other Pacific Islander; Some Other Race
+        U7P049:      Not Hispanic or Latino: Population of two or more races: Population of four races
+        U7P050:      Not Hispanic or Latino: Population of two or more races: Population of four races: White; Black or African American; American Indian and Alaska Native; Asian
+        U7P051:      Not Hispanic or Latino: Population of two or more races: Population of four races: White; Black or African American; American Indian and Alaska Native; Native Hawaiian and Other Pacific Islander
+        U7P052:      Not Hispanic or Latino: Population of two or more races: Population of four races: White; Black or African American; American Indian and Alaska Native; Some Other Race
+        U7P053:      Not Hispanic or Latino: Population of two or more races: Population of four races: White; Black or African American; Asian; Native Hawaiian and Other Pacific Islander
+        U7P054:      Not Hispanic or Latino: Population of two or more races: Population of four races: White; Black or African American; Asian; Some Other Race
+        U7P055:      Not Hispanic or Latino: Population of two or more races: Population of four races: White; Black or African American; Native Hawaiian and Other Pacific Islander; Some Other Race
+        U7P056:      Not Hispanic or Latino: Population of two or more races: Population of four races: White; American Indian and Alaska Native; Asian; Native Hawaiian and Other Pacific Islander
+        U7P057:      Not Hispanic or Latino: Population of two or more races: Population of four races: White; American Indian and Alaska Native; Asian; Some Other Race
+        U7P058:      Not Hispanic or Latino: Population of two or more races: Population of four races: White; American Indian and Alaska Native; Native Hawaiian and Other Pacific Islander; Some Other Race
+        U7P059:      Not Hispanic or Latino: Population of two or more races: Population of four races: White; Asian; Native Hawaiian and Other Pacific Islander; Some Other Race
+        U7P060:      Not Hispanic or Latino: Population of two or more races: Population of four races: Black or African American; American Indian and Alaska Native; Asian; Native Hawaiian and Other Pacific Islander
+        U7P061:      Not Hispanic or Latino: Population of two or more races: Population of four races: Black or African American; American Indian and Alaska Native; Asian; Some Other Race
+        U7P062:      Not Hispanic or Latino: Population of two or more races: Population of four races: Black or African American; American Indian and Alaska Native; Native Hawaiian and Other Pacific Islander; Some Other Race
+        U7P063:      Not Hispanic or Latino: Population of two or more races: Population of four races: Black or African American; Asian; Native Hawaiian and Other Pacific Islander; Some Other Race
+        U7P064:      Not Hispanic or Latino: Population of two or more races: Population of four races: American Indian and Alaska Native; Asian; Native Hawaiian and Other Pacific Islander; Some Other Race
+        U7P065:      Not Hispanic or Latino: Population of two or more races: Population of five races
+        U7P066:      Not Hispanic or Latino: Population of two or more races: Population of five races: White; Black or African American; American Indian and Alaska Native; Asian; Native Hawaiian and Other Pacific Islander
+        U7P067:      Not Hispanic or Latino: Population of two or more races: Population of five races: White; Black or African American; American Indian and Alaska Native; Asian; Some Other Race
+        U7P068:      Not Hispanic or Latino: Population of two or more races: Population of five races: White; Black or African American; American Indian and Alaska Native; Native Hawaiian and Other Pacific Islander; Some Other Race
+        U7P069:      Not Hispanic or Latino: Population of two or more races: Population of five races: White; Black or African American; Asian; Native Hawaiian and Other Pacific Islander; Some Other Race
+        U7P070:      Not Hispanic or Latino: Population of two or more races: Population of five races: White; American Indian and Alaska Native; Asian; Native Hawaiian and Other Pacific Islander; Some Other Race
+        U7P071:      Not Hispanic or Latino: Population of two or more races: Population of five races: Black or African American; American Indian and Alaska Native; Asian; Native Hawaiian and Other Pacific Islander; Some Other Race
+        U7P072:      Not Hispanic or Latino: Population of two or more races: Population of six races
+        U7P073:      Not Hispanic or Latino: Population of two or more races: Population of six races: White; Black or African American; American Indian and Alaska Native; Asian; Native Hawaiian and Other Pacific Islander; Some Other Race
+ 
+    Table 2:     Sex by Age for Selected Age Categories
+    Universe:    Total population
+    Source code: P12
+    NHGIS code:  U7S
+        U7S001:      Total
+        U7S002:      Male
+        U7S003:      Male: Under 5 years
+        U7S004:      Male: 5 to 9 years
+        U7S005:      Male: 10 to 14 years
+        U7S006:      Male: 15 to 17 years
+        U7S007:      Male: 18 and 19 years
+        U7S008:      Male: 20 years
+        U7S009:      Male: 21 years
+        U7S010:      Male: 22 to 24 years
+        U7S011:      Male: 25 to 29 years
+        U7S012:      Male: 30 to 34 years
+        U7S013:      Male: 35 to 39 years
+        U7S014:      Male: 40 to 44 years
+        U7S015:      Male: 45 to 49 years
+        U7S016:      Male: 50 to 54 years
+        U7S017:      Male: 55 to 59 years
+        U7S018:      Male: 60 and 61 years
+        U7S019:      Male: 62 to 64 years
+        U7S020:      Male: 65 and 66 years
+        U7S021:      Male: 67 to 69 years
+        U7S022:      Male: 70 to 74 years
+        U7S023:      Male: 75 to 79 years
+        U7S024:      Male: 80 to 84 years
+        U7S025:      Male: 85 years and over
+        U7S026:      Female
+        U7S027:      Female: Under 5 years
+        U7S028:      Female: 5 to 9 years
+        U7S029:      Female: 10 to 14 years
+        U7S030:      Female: 15 to 17 years
+        U7S031:      Female: 18 and 19 years
+        U7S032:      Female: 20 years
+        U7S033:      Female: 21 years
+        U7S034:      Female: 22 to 24 years
+        U7S035:      Female: 25 to 29 years
+        U7S036:      Female: 30 to 34 years
+        U7S037:      Female: 35 to 39 years
+        U7S038:      Female: 40 to 44 years
+        U7S039:      Female: 45 to 49 years
+        U7S040:      Female: 50 to 54 years
+        U7S041:      Female: 55 to 59 years
+        U7S042:      Female: 60 and 61 years
+        U7S043:      Female: 62 to 64 years
+        U7S044:      Female: 65 and 66 years
+        U7S045:      Female: 67 to 69 years
+        U7S046:      Female: 70 to 74 years
+        U7S047:      Female: 75 to 79 years
+        U7S048:      Female: 80 to 84 years
+        U7S049:      Female: 85 years and over
+ 
+--------------------------------------------------------------------------------
+Citation and Use of NHGIS Data
+--------------------------------------------------------------------------------
+ 
+All persons are granted a limited license to use this documentation and the
+accompanying data, subject to the following conditions:
+
+* REDISTRIBUTION: You will not redistribute the data without permission.
+
+  You may publish a subset of the data to meet journal requirements for accessing 
+  data related to a particular publication. Contact us for permission for any other 
+  redistribution; we will consider requests for free and commercial redistribution.
+
+* CITATION: You will cite NHGIS appropriately.
+
+    * Publications and research reports employing NHGIS data (either tabular or GIS) 
+      should include the following citation:
+
+        Jonathan Schroeder, David Van Riper, Steven Manson, Katherine Knowles, Tracy Kugler, Finn Roberts, and Steven Ruggles. 
+        IPUMS National Historical Geographic Information System: Version 20.0 
+        [dataset]. Minneapolis, MN: IPUMS. 2025. 
+        http://doi.org/10.18128/D050.V20.0
+
+    * For policy briefs, online resources, or articles in the popular press, we 
+      recommend that you cite the use of NHGIS data as follows:
+
+        IPUMS NHGIS, University of Minnesota, www.nhgis.org.
+
+These terms of use are a legally binding agreement. You can use the data only in 
+accordance with these terms, and any other use is a violation of the agreement. 
+Violations may result in revocation of the agreement and prohibition from using other 
+IPUMS data. If IPUMS or our partners are harmed from your violation, you are 
+responsible for all damages, including reasonable attorney's fees and expenses.
+        
+In addition, we request that users send us a copy of any publications, research
+reports, or educational material making use of the data or documentation.
+
+Send electronic material to: nhgis@umn.edu
+
+Printed matter should be sent to:
+
+    IPUMS NHGIS
+    Institute for Social Research and Data Innovation
+    University of Minnesota
+    50 Willey Hall
+    225 19th Ave S
+    Minneapolis, MN 55455

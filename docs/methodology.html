@@ -33,6 +33,7 @@
   <h2>Data sources</h2>
   <ul>
     <li><strong>Demographic, social, economic, and housing variables:</strong> U.S. Census Bureau, <a href="https://www.census.gov/programs-surveys/acs" target="_blank" rel="noopener">American Community Survey</a> 5-year estimates for 2020–2024, fetched via the <a href="https://api.censusreporter.org" target="_blank" rel="noopener">Census Reporter API</a> (a no-key cache of Census API data maintained by the Census Reporter project).</li>
+    <li><strong>2020 Decennial Census counts (race, age, total population):</strong> Pulled via the Census API (tract-level <code>P1_001N</code> total population) and via an <a href="https://www.nhgis.org" target="_blank" rel="noopener">IPUMS NHGIS</a> extract of 2020 DHC tables P9 (Hispanic × Race) and P12 (Sex by Age). These are <strong>100% counts</strong>, not survey estimates — no margin of error. They show up alongside the ACS-equivalent variables (e.g., "White non-Hispanic (2020 count)" sits next to "White non-Hispanic" from ACS), so you can compare and use the more precise count where 5-year-stale data is acceptable.</li>
     <li><strong>Tract geometry:</strong> NYC Department of City Planning, <a href="https://www.nyc.gov/site/planning/data-maps/open-data/dwn-census.page" target="_blank" rel="noopener">2020 Census Tracts</a> (shoreline-clipped). Tract polygons are simplified to roughly 10% of their original resolution to keep the page lightweight.</li>
     <li><strong>Crime rates:</strong> NYC Open Data, <a href="https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Historic/qgea-i56i" target="_blank" rel="noopener">NYPD Complaint Data — Historic</a> plus <a href="https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Current-Year-To-Date-/5uac-w243" target="_blank" rel="noopener">Year-To-Date</a>, restricted to the seven major felonies and aggregated to tracts by point-in-polygon. Window is a rolling 12 months ending on the most recent date present in the data.</li>
     <li><strong>Election results:</strong> NYC Board of Elections citywide ED-level CSVs (<a href="https://vote.nyc/page/election-results" target="_blank" rel="noopener">vote.nyc</a>) for the 2020 and 2024 general elections (president); pre-aggregated mayoral results from <a href="https://github.com/joshgreenman1973/nyc-election-archive" target="_blank" rel="noopener">nyc-election-archive</a> for 2021 and 2025 mayoral generals. ED polygons aggregated to 2020 census tracts via centroid point-in-polygon.</li>
@@ -130,9 +131,9 @@
 
   <h2>What is <em>not</em> yet here</h2>
   <ul>
-    <li><strong>2020 Decennial population as an alternative denominator.</strong> Designed and scripted (<code>fetch_decennial.py</code>); requires a free <a href="https://api.census.gov/data/key_signup.html" target="_blank" rel="noopener">Census API key</a> in the <code>CENSUS_API_KEY</code> environment variable to run. Once populated, every per-capita variable will have a "use ACS 5-year (current) / use 2020 Decennial (count)" toggle.</li>
-    <li><strong>NYSED non-public (private + parochial) school rosters.</strong> Available only as Microsoft Access files; requires <code>mdbtools</code> or equivalent to parse.</li>
+    <li><strong>NYSED non-public (private + parochial) school rosters.</strong> Available only as Microsoft Access files; requires <code>mdbtools</code> or equivalent to parse. Public-school enrollment from the NYC DOE Demographic Snapshot is in.</li>
     <li><strong>LEHD LODES jobs/commute data.</strong> Administrative payroll records — better than ACS B23025 for employment counts. A natural next addition.</li>
+    <li><strong>Hispanic country-of-origin breakdown at tract level</strong> (Mexican, Dominican, Salvadoran, etc.). 2020 DHC does not publish this at tract level — only state and finer subgroups. ACS B03001 has it but with high margins of error at tract level.</li>
   </ul>
 
   <h2>Color scales</h2>

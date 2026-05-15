@@ -378,6 +378,23 @@ for tract, d in all_data.items():
         else: rec[key + '_moe'] = round(moe_val, 2)
     derived[tract] = rec
 
+# ---------- merge NHGIS 2020 DHC race/age 100%-count metrics (optional) ----------
+nhgis_path = DOCS / "nhgis_dhc_by_tract.json"
+if nhgis_path.exists():
+    print("Merging NHGIS 2020 DHC counts...")
+    nh = json.load(open(nhgis_path))
+    matched = 0
+    for tract, d in derived.items():
+        rec = nh.get(tract)
+        if not rec: continue
+        for k, v in rec.items():
+            d[k] = v
+        matched += 1
+    print(f"  attached DHC metrics to {matched} tracts")
+else:
+    print(f"No {nhgis_path.name} — run fetch_nhgis.py first.")
+
+
 # ---------- merge election results (optional) ----------
 elec_path = DOCS / "elections_by_tract.json"
 if elec_path.exists():
@@ -522,6 +539,12 @@ for f in base["features"]:
     f["properties"] = d
     features.append(f)
 
+# Strip internal raw-count fields (prefixed with _) from final output to keep file size down.
+for f in features:
+    for k in list(f["properties"].keys()):
+        if k.startswith("_"):
+            del f["properties"][k]
+
 print(f"Joined {len(features)} tracts (geometry without data: {unmatched_geom}).")
 
 
@@ -619,6 +642,24 @@ for nf in nta_base["features"]:
     rec["doe_public_k12_enrolled"] = doe_k12
     if has_2020:
         rec["pop_2020"] = pop_2020_sum
+
+    # NHGIS DHC 2020 counts aggregation: sum raw cells, recompute percentages
+    if nhgis_path.exists():
+        dhc_total = 0
+        sums = {k: 0 for k in ["_white_nh_2020_n","_black_nh_2020_n","_asian_nh_2020_n","_hispanic_2020_n","_under18_2020_n","_over65_2020_n"]}
+        for g in member_tracts:
+            t_rec = derived.get(g, {})
+            dhc_total += t_rec.get("pop_2020_dhc") or 0
+            for k in sums:
+                sums[k] += t_rec.get(k) or 0
+        if dhc_total > 0:
+            rec["pop_2020_dhc"]       = dhc_total
+            rec["pct_white_nh_2020"]  = 100.0 * sums["_white_nh_2020_n"]  / dhc_total
+            rec["pct_black_nh_2020"]  = 100.0 * sums["_black_nh_2020_n"]  / dhc_total
+            rec["pct_asian_nh_2020"]  = 100.0 * sums["_asian_nh_2020_n"]  / dhc_total
+            rec["pct_hispanic_2020"]  = 100.0 * sums["_hispanic_2020_n"]  / dhc_total
+            rec["pct_under18_2020"]   = 100.0 * sums["_under18_2020_n"]   / dhc_total
+            rec["pct_over65_2020"]    = 100.0 * sums["_over65_2020_n"]    / dhc_total
 
     # Sum election votes across member tracts and recompute candidate vote shares
     if elec_path.exists():
@@ -734,6 +775,10 @@ VARS = [
      "Share of residents younger than 18."),
     ("People", "pct_over65", "Share 65 and over", "pct", "%",
      "Share of residents 65 years or older."),
+    ("People", "pct_under18_2020", "Share under 18 (2020 count)", "pct", "%",
+     "Share under 18 — 2020 Decennial 100% count, no margin of error."),
+    ("People", "pct_over65_2020", "Share 65 and over (2020 count)", "pct", "%",
+     "Share 65 and over — 2020 Decennial 100% count, no margin of error."),
 
     # --- 2. Race / ethnicity ---
     ("Race / ethnicity", "pct_white_nh", "White (non-Hispanic)", "pct", "%",
@@ -744,6 +789,15 @@ VARS = [
      "Share identifying as Asian alone and not Hispanic or Latino."),
     ("Race / ethnicity", "pct_hispanic", "Hispanic or Latino (any race)", "pct", "%",
      "Share identifying as Hispanic or Latino, of any race."),
+
+    ("Race / ethnicity", "pct_white_nh_2020", "White non-Hispanic (2020 count)", "pct", "%",
+     "Share identifying as White alone, non-Hispanic — 2020 Decennial Census 100% count, not a survey estimate. More precise than the ACS version above but 5 years older."),
+    ("Race / ethnicity", "pct_black_nh_2020", "Black non-Hispanic (2020 count)", "pct", "%",
+     "Share identifying as Black or African American alone, non-Hispanic — 2020 Decennial 100% count."),
+    ("Race / ethnicity", "pct_asian_nh_2020", "Asian non-Hispanic (2020 count)", "pct", "%",
+     "Share identifying as Asian alone, non-Hispanic — 2020 Decennial 100% count."),
+    ("Race / ethnicity", "pct_hispanic_2020", "Hispanic or Latino (2020 count)", "pct", "%",
+     "Share identifying as Hispanic or Latino, of any race — 2020 Decennial 100% count."),
 
     # --- 3. Origin & language ---
     ("Origin & language", "pct_foreign_born", "Foreign-born", "pct", "%",
