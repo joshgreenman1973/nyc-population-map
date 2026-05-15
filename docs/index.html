@@ -256,12 +256,8 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3-array@3"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3-scale@4"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3-scale-chromatic@3"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3-interpolate@3"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3-color@3"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3-format@3"></script>
+<!-- Load d3 as a single bundle so dependency-resolution order can't go wrong. -->
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 <script>
 // ===== formatting =====
 const fmtInt = d3.format(",.0f");
@@ -678,18 +674,26 @@ Promise.all([
   fetch("release.json").then(r => r.json()).catch(() => ({})),
 ]).then(([vars, geo, release]) => {
   VARS = vars; GEO = geo; RELEASE = release;
-  if (release && release.years) document.getElementById("release-name").textContent = release.years;
-  if (release && release.crime_window) document.getElementById("crime-window-end").textContent = release.crime_window.end;
-  buildVarList();
-  buildPresets();
-  buildBivPickers();
-  currentScale = buildScale(metaOf(currentKey));
-  setSingleActiveBtn();
-  rebuildBivBins();
-  document.getElementById("pick-x").value = xKey;
-  document.getElementById("pick-y").value = yKey;
-  applyCurrent();
-  initMap();
+  try {
+    if (release && release.years) document.getElementById("release-name").textContent = release.years;
+    if (release && release.crime_window) document.getElementById("crime-window-end").textContent = release.crime_window.end;
+    buildVarList();
+    buildPresets();
+    buildBivPickers();
+    currentScale = buildScale(metaOf(currentKey));
+    setSingleActiveBtn();
+    rebuildBivBins();
+    document.getElementById("pick-x").value = xKey;
+    document.getElementById("pick-y").value = yKey;
+    applyCurrent();
+  } catch (e) {
+    console.error("setup error:", e);
+  }
+  try { initMap(); } catch (e) { console.error("map init error:", e); }
+}).catch(e => {
+  console.error("data load error:", e);
+  document.getElementById("cur-title").textContent = "Failed to load data";
+  document.getElementById("cur-desc").textContent = String(e);
 });
 </script>
 </body>
