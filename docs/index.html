@@ -241,7 +241,7 @@
     </div>
 
     <div id="footer">
-      Data: <a href="https://api.censusreporter.org" target="_blank" rel="noopener">Census Reporter</a> mirror of the U.S. Census Bureau American Community Survey 5-year (<span id="release-name">2020–2024</span>). Tract geometry from <a href="https://www.nyc.gov/site/planning/data-maps/open-data.page" target="_blank" rel="noopener">NYC DCP</a>, shoreline-clipped 2020 vintage. Missing values shown in gray. See <a href="methodology.html">methodology</a>.
+      Data: <a href="https://api.censusreporter.org" target="_blank" rel="noopener">Census Reporter</a> mirror of the U.S. Census Bureau American Community Survey 5-year (<span id="release-name">2020–2024</span>). Crime rates from <a href="https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Historic/qgea-i56i" target="_blank" rel="noopener">NYPD complaint data</a>, rolling 12 months ending <span id="crime-window-end">—</span>. Tract geometry from <a href="https://www.nyc.gov/site/planning/data-maps/open-data.page" target="_blank" rel="noopener">NYC DCP</a>, shoreline-clipped 2020 vintage. Missing values shown in gray. See <a href="methodology.html">methodology</a>.
     </div>
   </aside>
   <main style="position:relative;">
@@ -310,6 +310,7 @@ const PALETTES = {
   "Work & commute": d3.interpolateBuGn,
   "Other": d3.interpolateGreys,
   "People": d3.interpolateViridis,
+  "Crime (rolling 12 mo.)": d3.interpolateInferno,
 };
 function paletteFor(varMeta) { return PALETTES[varMeta.group] || PALETTES.default; }
 
@@ -678,6 +679,7 @@ Promise.all([
 ]).then(([vars, geo, release]) => {
   VARS = vars; GEO = geo; RELEASE = release;
   if (release && release.years) document.getElementById("release-name").textContent = release.years;
+  if (release && release.crime_window) document.getElementById("crime-window-end").textContent = release.crime_window.end;
   buildVarList();
   buildPresets();
   buildBivPickers();

@@ -1,1 +1,1 @@
-{"id": "acs2024_5yr", "name": "ACS 2024 5-year", "years": "2020-2024"}
+{"id": "acs2024_5yr", "name": "ACS 2024 5-year", "years": "2020-2024", "crime_window": {"start": "2025-04-01", "end": "2026-03-31", "days": 365, "matched": 120364}}

@@ -186,6 +186,46 @@ for tract, d in all_data.items():
     }
 
 
+# ---------- merge crime counts (if available) ----------
+crime_path = DOCS / "crime_by_tract.json"
+crime_meta = None
+if crime_path.exists():
+    print("Merging tract-level crime counts...")
+    cj = json.load(open(crime_path))
+    crime_meta = cj.get("meta")
+    counts = cj.get("counts", {})
+    suppressed_low_pop = 0
+    for tract, d in derived.items():
+        c = counts.get(tract)
+        if not c:
+            d["crime_violent"] = None
+            d["crime_property"] = None
+            d["crime_total"] = None
+            d["crime_violent_rate"] = None
+            d["crime_property_rate"] = None
+            d["crime_total_rate"] = None
+            continue
+        pop = d.get("pop_total")
+        # Rates per 1,000 residents over the 12-month window.
+        # Suppress rates for very small denominators (pop < 50) — divides blow up.
+        suppress = (pop is None) or (pop < 50)
+        d["crime_violent"] = c["violent"]
+        d["crime_property"] = c["property"]
+        d["crime_total"] = c["total"]
+        if suppress:
+            suppressed_low_pop += 1
+            d["crime_violent_rate"] = None
+            d["crime_property_rate"] = None
+            d["crime_total_rate"] = None
+        else:
+            d["crime_violent_rate"]  = 1000.0 * c["violent"]  / pop
+            d["crime_property_rate"] = 1000.0 * c["property"] / pop
+            d["crime_total_rate"]    = 1000.0 * c["total"]    / pop
+    print(f"  suppressed rates for {suppressed_low_pop} tracts with population < 50.")
+else:
+    print(f"No {crime_path.name} found — skipping crime merge. Run fetch_crime.py first.")
+
+
 # ---------- join geometry ----------
 print("Joining tract geometry (NYC DCP 2020 tracts, shoreline-clipped)...")
 base = json.load(open(ROOT / "nyc2020_tracts.geojson"))
@@ -299,6 +339,13 @@ VARS = [
      "Share of civilians 18+ who are veterans."),
     ("Other", "pct_no_internet", "No internet access", "pct", "%",
      "Share of households without any internet subscription."),
+
+    ("Crime (rolling 12 mo.)", "crime_total_rate", "Major-felony rate", "num1", "per 1,000 residents",
+     "All seven major felonies — murder, rape, robbery, felony assault, burglary, grand larceny, grand larceny of motor vehicle — per 1,000 residents over the most recent 12 months (NYPD)."),
+    ("Crime (rolling 12 mo.)", "crime_violent_rate", "Violent-crime rate", "num1", "per 1,000 residents",
+     "Murder, rape, robbery, and felony assault per 1,000 residents over the most recent 12 months (NYPD)."),
+    ("Crime (rolling 12 mo.)", "crime_property_rate", "Property-crime rate", "num1", "per 1,000 residents",
+     "Burglary, grand larceny, and grand larceny of motor vehicle per 1,000 residents over the most recent 12 months (NYPD)."),
 ]
 
 vars_meta = [
@@ -308,7 +355,15 @@ vars_meta = [
 json.dump(vars_meta, open(DOCS / "variables.json", "w"))
 print(f"Wrote {DOCS/'variables.json'}  ({len(vars_meta)} variables)")
 
-# release info
-json.dump(release_meta or {}, open(DOCS / "release.json", "w"))
+# release info — include crime window when present
+release_blob = dict(release_meta or {})
+if crime_meta:
+    release_blob["crime_window"] = {
+        "start": crime_meta["window_start"],
+        "end": crime_meta["window_end"],
+        "days": crime_meta["window_days"],
+        "matched": crime_meta["matched_complaints"],
+    }
+json.dump(release_blob, open(DOCS / "release.json", "w"))
 print(f"Wrote {DOCS/'release.json'}")
 print("Done.")

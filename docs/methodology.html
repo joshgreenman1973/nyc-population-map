@@ -34,6 +34,7 @@
   <ul>
     <li><strong>Demographic, social, economic, and housing variables:</strong> U.S. Census Bureau, <a href="https://www.census.gov/programs-surveys/acs" target="_blank" rel="noopener">American Community Survey</a> 5-year estimates for 2020–2024, fetched via the <a href="https://api.censusreporter.org" target="_blank" rel="noopener">Census Reporter API</a> (a no-key cache of Census API data maintained by the Census Reporter project).</li>
     <li><strong>Tract geometry:</strong> NYC Department of City Planning, <a href="https://www.nyc.gov/site/planning/data-maps/open-data/dwn-census.page" target="_blank" rel="noopener">2020 Census Tracts</a> (shoreline-clipped). Tract polygons are simplified to roughly 10% of their original resolution to keep the page lightweight.</li>
+    <li><strong>Crime rates:</strong> NYC Open Data, <a href="https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Historic/qgea-i56i" target="_blank" rel="noopener">NYPD Complaint Data — Historic</a> plus <a href="https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Current-Year-To-Date-/5uac-w243" target="_blank" rel="noopener">Year-To-Date</a>, restricted to the seven major felonies and aggregated to tracts by point-in-polygon. Window is a rolling 12 months ending on the most recent date present in the data.</li>
   </ul>
 
   <h2>Geography</h2>
@@ -74,8 +75,22 @@
       <tr><td>Commute mode shares</td><td>B08301_010 / 019 / 021 ÷ B08301_001</td></tr>
       <tr><td>Veterans (18+)</td><td>B21001_002 ÷ B21001_001</td></tr>
       <tr><td>No internet access</td><td>B28002_013 ÷ B28002_001</td></tr>
+      <tr><td>Major-felony rate</td><td>(Σ NYPD complaints with KY_CD ∈ {101, 104, 105, 106, 107, 109, 110}) ÷ population × 1,000</td></tr>
+      <tr><td>Violent-crime rate</td><td>(Σ NYPD complaints with KY_CD ∈ {101, 104, 105, 106}) ÷ population × 1,000</td></tr>
+      <tr><td>Property-crime rate</td><td>(Σ NYPD complaints with KY_CD ∈ {107, 109, 110}) ÷ population × 1,000</td></tr>
     </tbody>
   </table>
+
+  <h3>Crime rate details</h3>
+  <p>NYPD's "seven major felonies" (sometimes called Index 7) are the historical FBI Part I categories the department reports for CompStat. We split them into the two standard buckets:</p>
+  <ul>
+    <li><strong>Violent</strong> — murder &amp; non-negligent manslaughter (KY_CD 101), rape (104), robbery (105), felony assault (106).</li>
+    <li><strong>Property</strong> — burglary (107), grand larceny (109), grand larceny of motor vehicle (110).</li>
+    <li><strong>Major-felony total</strong> — the sum of the two.</li>
+  </ul>
+  <p>Each complaint is filed to the date the incident was reported to police (<code>RPT_DT</code>), not the date it allegedly occurred — that's the field NYPD uses for its own performance reporting, and the only one that's reliably populated.</p>
+  <p>Complaints are placed on the tract map by point-in-polygon on the NYPD-reported latitude/longitude. The denominator is total population from the same ACS table used elsewhere on this page (<code>B01003_001</code>), so the rate is per 1,000 <em>residents</em>, not per 1,000 daytime population or per 1,000 visitors. Tracts with fewer than 50 residents (parks, cemeteries, airports, transit yards) are shown as "no data" on the rate maps because the denominator is too small to be meaningful — a single felony in a 12-person tract would produce an 83-per-1,000 rate.</p>
+  <p>The "rolling 12 months" window spans the most recent 365 days for which combined data are available. Because the Historic dataset is updated quarterly and the YTD dataset daily, this can shift forward each time the build script is re-run.</p>
 
   <h2>Color scales</h2>
   <p>The map offers two binning options for every variable:</p>
