@@ -383,6 +383,33 @@ for tract, d in all_data.items():
         else: rec[key + '_moe'] = round(moe_val, 2)
     derived[tract] = rec
 
+# ---------- merge rent-stabilized building counts (optional) ----------
+rs_path = DOCS / "rentstab_by_tract.json"
+if rs_path.exists():
+    print("Merging rent-stabilized unit counts...")
+    rsj = json.load(open(rs_path))
+    by_tract_rs = rsj.get("by_tract", {})
+    matched = 0
+    for tract, d in derived.items():
+        rec = by_tract_rs.get(tract)
+        if not rec:
+            continue
+        d["rs_buildings"]     = rec.get("rs_buildings") or 0
+        d["rs_units_2024"]    = rec.get("rs_units_2024") or 0
+        d["rs_units_2018"]    = rec.get("rs_units_2018") or 0
+        d["rs_unit_change_pct_2018_2024"] = rec.get("rs_unit_change_pct_2018_2024")
+        # Density (units per sq mi) — needs land area, computed downstream during join
+        # Share of renter-occupied — needs B25003_003 from raw, computed here
+        renter_units = all_data.get(tract, {}).get("B25003003")
+        if d["rs_units_2024"] is not None and renter_units and renter_units > 0:
+            # Cap at 100% — possible for rs_units > renter count due to data noise / non-residential
+            d["rs_share_of_renters"] = min(100.0, 100.0 * d["rs_units_2024"] / renter_units)
+        matched += 1
+    print(f"  attached rent-stab data to {matched} tracts")
+else:
+    print(f"No {rs_path.name} — run fetch_rentstab.py first.")
+
+
 # ---------- merge NHGIS 2020 DHC race/age 100%-count metrics (optional) ----------
 nhgis_path = DOCS / "nhgis_dhc_by_tract.json"
 if nhgis_path.exists():
@@ -556,6 +583,9 @@ for f in base["features"]:
     pop = d.get("pop_total")
     d["pop_density"] = (pop / sqmi) if (pop and sqmi > 0) else None
     d["land_sqmi"] = round(sqmi, 4) if sqmi else None
+    rs_u = d.get("rs_units_2024")
+    if rs_u and sqmi > 0:
+        d["rs_density_per_sqmi"] = rs_u / sqmi
     d["geoid"] = geoid
     d["borough"] = p.get("boroname")
     d["nta"] = p.get("ntaname")
@@ -675,6 +705,32 @@ for nf in nta_base["features"]:
     rec["doe_public_k12_enrolled"] = doe_k12
     if has_2020:
         rec["pop_2020"] = pop_2020_sum
+
+    # Rent-stabilized aggregation (sum across member tracts)
+    if rs_path.exists():
+        rs_b = rs_u = rs_u18 = 0
+        for g in member_tracts:
+            t_rec = derived.get(g, {})
+            rs_b += t_rec.get("rs_buildings") or 0
+            rs_u += t_rec.get("rs_units_2024") or 0
+            rs_u18 += t_rec.get("rs_units_2018") or 0
+        rec["rs_buildings"] = rs_b
+        rec["rs_units_2024"] = rs_u
+        rec["rs_units_2018"] = rs_u18
+        # Density (units per sq mi)
+        if rec.get("land_sqmi") and rec["land_sqmi"] > 0:
+            rec["rs_density_per_sqmi"] = rs_u / rec["land_sqmi"]
+        # Share of renter-occupied units (ACS B25003_003 aggregated). We don't have that
+        # value summed here — compute via tract-level estimate (already aggregated by sum):
+        renter_units = 0
+        for g in member_tracts:
+            t = all_data.get(g, {})
+            v = t.get("B25003003")
+            if v: renter_units += v
+        if renter_units > 0:
+            rec["rs_share_of_renters"] = min(100.0, 100.0 * rs_u / renter_units)
+        if rs_u18 > 0:
+            rec["rs_unit_change_pct_2018_2024"] = 100.0 * (rs_u - rs_u18) / rs_u18
 
     # NHGIS DHC 2020 counts aggregation: sum raw cells, recompute percentages
     if nhgis_path.exists():
@@ -884,6 +940,16 @@ VARS = [
      "Median value of owner-occupied housing units, by self-report (ACS B25077)."),
     ("Housing", "median_rent_burden", "Median rent burden", "num1", "%",
      "Median gross rent as a percentage of household income in the past 12 months (ACS B25071)."),
+    ("Housing", "rs_share_of_renters", "Rent-stabilized share of rentals", "pct", "%",
+     "Share of renter-occupied housing units that are rent-stabilized, as of 2024. Numerator: 2024 stabilized-unit count from JustFix's compilation of NYC DOF tax-bill scrapes. Denominator: ACS 2020-24 renter-occupied units (B25003_003). Values are clipped at 100% — small mismatches near 100% reflect ACS estimation noise and the lag between official 2024 stabilization registrations and ACS's rolling sample."),
+    ("Housing", "rs_units_2024", "Rent-stabilized units (count)", "int", "units",
+     "Total rent-stabilized apartments in the tract in 2024. Source: JustFix.nyc's compilation of NYC Department of Finance tax-bill scrapes (buildings carrying a rent-stabilization fee line item)."),
+    ("Housing", "rs_buildings", "Rent-stabilized buildings (count)", "int", "buildings",
+     "Number of buildings with at least one rent-stabilized unit registered in 2024."),
+    ("Housing", "rs_density_per_sqmi", "Rent-stabilized unit density", "num1", "units/sq mi",
+     "Rent-stabilized apartments per square mile of land area in the tract."),
+    ("Housing", "rs_unit_change_pct_2018_2024", "Rent-stabilized unit change, 2018→2024", "num1", "%",
+     "Percent change in rent-stabilized units from 2018 to 2024. Negative values are losses (most commonly from luxury vacancy decontrol pre-2019, demolition, or formal destabilization); positive values usually reflect new 421-a buildings entering the stabilized stock."),
 
     # --- 7. Crime ---
     ("Crime (rolling 12 mo.)", "crime_total_rate", "Major-felony rate", "num1", "per 1,000 residents",
