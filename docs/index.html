@@ -1186,7 +1186,8 @@ function initMap() {
   attachGeoLayer();
   L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",
     { subdomains: 'abcd', maxZoom: 18, pane: 'shadowPane', opacity: 0.85 }).addTo(map);
-  map.fitBounds(geoLayer.getBounds(), { padding: [10, 10] });
+  // Center on NYC at a zoom that fills the viewport (was fitBounds, which over-padded).
+  map.setView([40.715, -73.94], 11);
 }
 
 // ===== address search (NYC Geosearch — no key required) =====

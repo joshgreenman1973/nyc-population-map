@@ -916,6 +916,8 @@ VARS = [
      "Median household income in the past 12 months, in 2024 inflation-adjusted dollars (ACS B19013)."),
     ("Income & poverty", "pct_poverty", "Poverty rate", "pct", "%",
      "Share of residents below the federal poverty line, among those for whom poverty status was determined (excludes institutional group quarters)."),
+    ("Income & poverty", "pct_snap", "Receiving SNAP", "pct", "%",
+     "Share of households that received SNAP / food-stamp benefits in the past year."),
     ("Income & poverty", "pct_hh_under30k", "Households under $30k", "pct", "%",
      "Share of households earning less than $30,000."),
     ("Income & poverty", "pct_hh_30_60k", "Households $30k–$60k", "pct", "%",
@@ -924,14 +926,10 @@ VARS = [
      "Share of households earning $60,000 to $99,999."),
     ("Income & poverty", "pct_hh_100_150k", "Households $100k–$150k", "pct", "%",
      "Share of households earning $100,000 to $149,999."),
-    ("Income & poverty", "pct_hh_150kplus", "Households $150k+", "pct", "%",
-     "Share of households earning $150,000 or more (the union of the next two brackets)."),
     ("Income & poverty", "pct_hh_150_200k", "Households $150k–$200k", "pct", "%",
      "Share of households earning $150,000 to $199,999."),
     ("Income & poverty", "pct_hh_200kplus", "Households $200k+", "pct", "%",
      "Share of households earning $200,000 or more. This is the highest bracket ACS publishes at tract level — Census top-codes everything above $200k here. For dollar-precise distinctions among the very wealthy ($500k+, $1M+), tract-level data is not publicly available; the IRS Statistics of Income series breaks out higher bands but only at the ZIP-code level."),
-    ("Income & poverty", "pct_snap", "Receiving SNAP", "pct", "%",
-     "Share of households that received SNAP / food-stamp benefits in the past year."),
 
     # --- 6. Housing ---
     ("Housing", "median_gross_rent", "Median gross rent", "usd", "$/mo",
