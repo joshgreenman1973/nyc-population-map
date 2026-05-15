@@ -382,7 +382,7 @@
 
     <!-- Bivariate picker -->
     <div id="biv-pane" class="hidden">
-      <div class="section-label">Ten preset pairings</div>
+      <div class="section-label" id="preset-section-label">Preset pairings</div>
       <div id="presets"></div>
 
       <div class="section-label" style="margin-top:16px">Pick any two</div>
@@ -744,11 +744,15 @@ function setSingleActiveBtn() {
 // ===== bivariate picker / presets =====
 function buildPresets() {
   const root = document.getElementById("presets");
-  root.innerHTML = PRESETS.map((p, i) => `
+  // Reverse-order display: newest preset shows first.
+  const display = PRESETS.map((p, i) => ({ p, i })).reverse();
+  root.innerHTML = display.map(({ p, i }, displayIdx) => `
     <button class="preset" data-x="${p.x}" data-y="${p.y}" data-i="${i}">
-      <div class="nm">${i+1}. ${p.name}</div>
+      <div class="nm">${displayIdx + 1}. ${p.name}</div>
       <div class="axes">${metaOf(p.x).label} × ${metaOf(p.y).label}</div>
     </button>`).join("");
+  const label = document.getElementById("preset-section-label");
+  if (label) label.textContent = `${PRESETS.length} preset pairings`;
   root.querySelectorAll(".preset").forEach(b => {
     b.addEventListener("click", () => {
       const p = PRESETS[+b.dataset.i];
