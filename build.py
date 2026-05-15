@@ -496,12 +496,13 @@ if crime_path.exists():
             d["crime_violent_rate"]  = 1000.0 * c["violent"]  / pop
             d["crime_property_rate"] = 1000.0 * c["property"] / pop
             d["crime_total_rate"]    = 1000.0 * c["total"]    / pop
-            # Commercial / tourist heuristic: a tract where total annual crime > 1000 but
-            # resident population < 5000 has a daytime population vastly larger than the
-            # ACS-counted resident base (Midtown, Times Square, Financial District, Penn).
-            # Flag for the UI tooltip; don't null out, because the rate is still real, just
-            # systematically inflated relative to other tracts in the city.
-            if c["total"] > 1000 and pop < 5000:
+            # Commercial / tourist / industrial heuristic: any tract with a major-felony
+            # rate above 100 per 1,000 residents is almost certainly daytime-population
+            # driven. (Citywide ≈ 14 per 1,000; a high-crime residential tract is ~50-80.)
+            # This catches Midtown, Times Square, Financial District, Penn Station, Hunts
+            # Point industrial, and similar. We don't suppress — the rate is real — we
+            # flag for the UI to display a caveat that the denominator is residents-only.
+            if d["crime_total_rate"] > 100:
                 d["crime_commercial_daytime"] = True
     print(f"  suppressed rates for {suppressed_low_pop} tracts with population < 50.")
 else:
@@ -513,6 +514,9 @@ print("Joining tract geometry (NYC DCP 2020 tracts, shoreline-clipped)...")
 base = json.load(open(ROOT / "nyc2020_tracts.geojson"))
 
 # Capture tract→NTA mapping BEFORE the loop below overwrites each feature's properties.
+# Also build NTA code → ntatype, so tracts can be classified as non-residential via their
+# parent NTA's official NYC DCP classifier (much more reliable than tract-level cdeligibil,
+# which marks plenty of residential tracts as "I" for non-population reasons).
 tract_to_nta = {}
 nta_to_tracts = {}
 for f in base["features"]:
@@ -521,6 +525,13 @@ for f in base["features"]:
     if code:
         tract_to_nta[g] = code
         nta_to_tracts.setdefault(code, []).append(g)
+
+nta_type_lookup = {}
+_nta_src = json.load(open(ROOT / "ntas_2020.geojson"))
+for f in _nta_src["features"]:
+    p = f["properties"]
+    nta_type_lookup[p.get("nta2020")] = p.get("ntatype")
+del _nta_src
 
 features = []
 unmatched_geom = 0
@@ -544,11 +555,13 @@ for f in base["features"]:
     d["borough"] = p.get("boroname")
     d["nta"] = p.get("ntaname")
     d["ct_label"] = p.get("ctlabel")
-    # Non-residential flag: NYC DCP cdeligibil "E" = tract excluded from a community district
-    # because it falls in a park, cemetery, airport, or other non-residential area.
-    if p.get("cdeligibil") == "E":
+    # Non-residential flag: derived from the tract's parent NTA's official NYC DCP type.
+    # ntatype "0" = residential; "5"=correctional, "6"=industrial/military, "7"=cemetery,
+    # "8"=airport, "9"=park. Tracts inside non-residential NTAs get the flag and have
+    # their crime rates suppressed (residents-based denominator is meaningless here).
+    nta_code_ = p.get("nta2020")
+    if nta_code_ and nta_type_lookup.get(nta_code_) not in (None, "0"):
         d["non_residential"] = True
-        # Suppress crime rates — denominators are too small / mismatched to be meaningful.
         for k in ("crime_violent_rate", "crime_property_rate", "crime_total_rate"):
             d[k] = None
     f["properties"] = d
@@ -748,6 +761,8 @@ for nf in nta_base["features"]:
             rec["crime_violent_rate"]  = 1000.0 * cv_count / pop
             rec["crime_property_rate"] = 1000.0 * cp_count / pop
             rec["crime_total_rate"]    = 1000.0 * ct_count / pop
+            if rec["crime_total_rate"] > 100:
+                rec["crime_commercial_daytime"] = True
 
     # Geometry properties
     sqmi = 0
