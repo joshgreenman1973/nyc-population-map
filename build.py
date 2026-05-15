@@ -481,8 +481,9 @@ if crime_path.exists():
             continue
         pop = d.get("pop_total")
         # Rates per 1,000 residents over the 12-month window.
-        # Suppress rates for very small denominators (pop < 50) — divides blow up.
-        suppress = (pop is None) or (pop < 50)
+        # Suppress for very small or commercial-heavy denominators. 200 residents is a
+        # reasonable floor at the tract level — below that, rates whip around.
+        suppress = (pop is None) or (pop < 200)
         d["crime_violent"] = c["violent"]
         d["crime_property"] = c["property"]
         d["crime_total"] = c["total"]
@@ -495,6 +496,13 @@ if crime_path.exists():
             d["crime_violent_rate"]  = 1000.0 * c["violent"]  / pop
             d["crime_property_rate"] = 1000.0 * c["property"] / pop
             d["crime_total_rate"]    = 1000.0 * c["total"]    / pop
+            # Commercial / tourist heuristic: a tract where total annual crime > 1000 but
+            # resident population < 5000 has a daytime population vastly larger than the
+            # ACS-counted resident base (Midtown, Times Square, Financial District, Penn).
+            # Flag for the UI tooltip; don't null out, because the rate is still real, just
+            # systematically inflated relative to other tracts in the city.
+            if c["total"] > 1000 and pop < 5000:
+                d["crime_commercial_daytime"] = True
     print(f"  suppressed rates for {suppressed_low_pop} tracts with population < 50.")
 else:
     print(f"No {crime_path.name} found — skipping crime merge. Run fetch_crime.py first.")
@@ -536,6 +544,13 @@ for f in base["features"]:
     d["borough"] = p.get("boroname")
     d["nta"] = p.get("ntaname")
     d["ct_label"] = p.get("ctlabel")
+    # Non-residential flag: NYC DCP cdeligibil "E" = tract excluded from a community district
+    # because it falls in a park, cemetery, airport, or other non-residential area.
+    if p.get("cdeligibil") == "E":
+        d["non_residential"] = True
+        # Suppress crime rates — denominators are too small / mismatched to be meaningful.
+        for k in ("crime_violent_rate", "crime_property_rate", "crime_total_rate"):
+            d[k] = None
     f["properties"] = d
     features.append(f)
 
@@ -710,21 +725,26 @@ for nf in nta_base["features"]:
             rec["mayor_2025_sliwa_pct"]   = 100.0 * s25 / t25
             rec["mayor_2025_total"] = t25
 
-    # Sum crime across member tracts (numerators) and recompute rate using aggregated pop
+    # Sum crime across member tracts (numerators) and recompute rate using aggregated pop.
+    # Suppress rates entirely for non-residential NTAs (parks, cemeteries, airports) — the
+    # ratio of crime to *resident* population is meaningless when most users are non-residents.
+    # NYC DCP NTA type codes: "0" = general / residential. Anything else = park / cemetery /
+    # airport / waterway. ntype "9" is parks (e.g. BX2891 Pelham Bay Park).
+    ntatype = nf["properties"].get("ntatype")
+    rec["non_residential"] = ntatype != "0"
     if crime_path.exists():
         cv_count = cp_count = ct_count = 0
-        has_crime = False
         for g in member_tracts:
             t_rec = derived.get(g, {})
             cv_count += t_rec.get("crime_violent")  or 0
             cp_count += t_rec.get("crime_property") or 0
             ct_count += t_rec.get("crime_total")    or 0
-            has_crime = True
         rec["crime_violent"]  = cv_count
         rec["crime_property"] = cp_count
         rec["crime_total"]    = ct_count
         pop = rec.get("pop_total")
-        if pop and pop >= 50:
+        # Suppress if non-residential OR resident population < 500 (NTA floor for stable rate)
+        if pop and pop >= 500 and not rec["non_residential"]:
             rec["crime_violent_rate"]  = 1000.0 * cv_count / pop
             rec["crime_property_rate"] = 1000.0 * cp_count / pop
             rec["crime_total_rate"]    = 1000.0 * ct_count / pop

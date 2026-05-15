@@ -370,6 +370,31 @@
     padding: 8px 12px; font-size: 12px; color: var(--muted);
   }
 
+  /* Floating single-variable legend over the map */
+  #single-map-legend {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    z-index: 900;
+    background: rgba(255,255,255,0.97);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 12px 14px;
+    box-shadow: var(--shadow);
+    font-family: var(--sans);
+    color: var(--ink);
+    max-width: 260px;
+    font-size: 11.5px;
+  }
+  #single-map-legend.hidden { display: none; }
+  #single-map-legend .sml-title { font-weight: 600; font-size: 12.5px; margin-bottom: 6px; color: var(--ink); line-height: 1.25; }
+  #single-map-legend .sml-units { color: var(--muted); font-size: 10.5px; margin-bottom: 6px; }
+  #single-map-legend .row { display: flex; align-items: center; gap: 8px; margin: 2px 0; }
+  #single-map-legend .swatch { width: 24px; height: 12px; border: 1px solid rgba(0,0,0,0.08); border-radius: 2px; flex: 0 0 auto; }
+  #single-map-legend .grad-row { display: flex; align-items: center; gap: 8px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  #single-map-legend .grad-bar { flex: 1; height: 12px; border-radius: 2px; }
+  @media (max-width: 860px) { #single-map-legend { right: 8px; bottom: 8px; max-width: 220px; padding: 10px 12px; } }
+
   /* Floating bivariate legend over the map */
   #biv-map-legend {
     position: absolute;
@@ -455,8 +480,8 @@
 
     <div id="geo-toggle" title="Aggregating up reduces noise. Combining ~9 tracts into one NTA cuts a typical margin of error by roughly 3×, turning many 'unreliable' tract estimates into reliable neighborhood ones.">
       <span class="geo-label">Geography:</span>
-      <button data-geo="tract" class="active">Tract</button>
-      <button data-geo="nta">Neighborhood</button>
+      <button data-geo="tract">Tract</button>
+      <button data-geo="nta" class="active">Neighborhood</button>
     </div>
 
     <!-- Shared current-metric card -->
@@ -517,6 +542,7 @@
   </aside>
   <main style="position:relative;">
     <div id="map"></div>
+    <div id="single-map-legend"></div>
     <div id="biv-map-legend" class="hidden"></div>
     <div id="search-box">
       <svg id="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -560,7 +586,7 @@ let VARS = [];
 let GEO_TRACTS = null;
 let GEO_NTAS = null;
 let GEO = null;                  // currently active geometry
-let geoLevel = "tract";          // "tract" | "nta"
+let geoLevel = "nta";            // "tract" | "nta" — default to NTAs (lower MOEs, cleaner story)
 let RELEASE = null;
 let mode = "single";             // "single" | "bivariate"
 let showReliability = false;     // "fade unreliable estimates" toggle
@@ -773,28 +799,45 @@ function moeLine(props, key, meta) {
   if (moe == null) return "";
   return `<div class="moe-line">± ${fmtValue(moe, meta.fmt)} (90% CI) ${moeBadge(props, key)}</div>`;
 }
+function crimeCaveat(props, key) {
+  // Only relevant when the active variable is a crime-rate variable.
+  if (!key || !key.startsWith("crime_") || !key.endsWith("_rate")) return "";
+  if (props.non_residential) {
+    return `<div class="moe-line" style="color:#8a2a17">Non-residential area (park, cemetery, airport) — rate suppressed because the residents-based denominator is meaningless here.</div>`;
+  }
+  if (props.crime_commercial_daytime) {
+    return `<div class="moe-line" style="color:#7d6112">Heavy daytime / tourist area — the rate is per <em>resident</em>, but most incidents involve commuters or visitors, not residents. Treat as systematically inflated.</div>`;
+  }
+  return "";
+}
 function tooltipHtml(props) {
   if (mode === "single") {
     const meta = metaOf(currentKey);
     const val = props[currentKey];
     const valStr = fmtValue(val, meta.fmt);
     const units = meta.units && meta.fmt !== "usd" && meta.fmt !== "pct" ? `<span class="units">${meta.units}</span>` : "";
+    const label = (geoLevel === "nta") ? (props.nta || "") : `${props.borough || ""} · Tract ${props.ct_label || props.geoid}`;
+    const sub = (geoLevel === "nta") ? `${props.borough || ""} · ${props.nta_tract_count || ""} tracts` : (props.nta || "");
     return `<div class="tract-tooltip">
-      <div class="ttl">${props.borough || ""} · Tract ${props.ct_label || props.geoid}</div>
-      <div class="nta">${props.nta || ""}</div>
+      <div class="ttl">${label}</div>
+      <div class="nta">${sub}</div>
       <div><span class="val">${valStr}</span>${units}</div>
       ${moeLine(props, currentKey, meta)}
+      ${crimeCaveat(props, currentKey)}
     </div>`;
   } else {
     const mx = metaOf(xKey), my = metaOf(yKey);
     const xMoe = props[xKey + "_moe"], yMoe = props[yKey + "_moe"];
     const xMoeStr = xMoe != null ? ` <span style="color:var(--muted);font-weight:400;font-size:11px">± ${fmtValue(xMoe, mx.fmt)}</span>` : "";
     const yMoeStr = yMoe != null ? ` <span style="color:var(--muted);font-weight:400;font-size:11px">± ${fmtValue(yMoe, my.fmt)}</span>` : "";
+    const label = (geoLevel === "nta") ? (props.nta || "") : `${props.borough || ""} · Tract ${props.ct_label || props.geoid}`;
+    const sub = (geoLevel === "nta") ? (props.borough || "") : (props.nta || "");
     return `<div class="tract-tooltip">
-      <div class="ttl">${props.borough || ""} · Tract ${props.ct_label || props.geoid}</div>
-      <div class="nta">${props.nta || ""}</div>
+      <div class="ttl">${label}</div>
+      <div class="nta">${sub}</div>
       <div class="pair"><span>${mx.label}</span><span class="v">${fmtValue(props[xKey], mx.fmt)}${xMoeStr}</span></div>
       <div class="pair"><span>${my.label}</span><span class="v">${fmtValue(props[yKey], my.fmt)}${yMoeStr}</span></div>
+      ${crimeCaveat(props, xKey)}${crimeCaveat(props, yKey)}
     </div>`;
   }
 }
@@ -830,10 +873,8 @@ document.getElementById("detail-close").addEventListener("click", () => {
 });
 
 // ===== legends =====
-function renderSingleLegend() {
-  const meta = metaOf(currentKey);
-  const el = document.getElementById("legend");
-  if (!currentScale) { el.innerHTML = ""; return; }
+function buildSingleLegendBody(meta) {
+  if (!currentScale) return "";
   let html = "";
   if (currentScale.kind === "quantile") {
     const breaks = currentScale.breaks;
@@ -850,11 +891,24 @@ function renderSingleLegend() {
     const palette = paletteFor(meta);
     const stops = [];
     for (let i = 0; i <= 10; i++) stops.push(palette(i / 10));
-    html += `<div class="row"><span style="display:inline-block;width:100%;height:12px;background:linear-gradient(to right,${stops.join(",")});border-radius:2px;"></span></div>`;
-    html += `<div class="row" style="justify-content:space-between;"><span>${fmtValue(currentScale.lo, meta.fmt)}</span><span>${fmtValue(currentScale.hi, meta.fmt)}</span></div>`;
+    html += `<div class="grad-row"><span class="grad-bar" style="background:linear-gradient(to right,${stops.join(",")});"></span></div>`;
+    html += `<div class="grad-row" style="justify-content:space-between;"><span>${fmtValue(currentScale.lo, meta.fmt)}</span><span>${fmtValue(currentScale.hi, meta.fmt)}</span></div>`;
   }
   html += `<div class="row" style="margin-top:6px;"><span class="swatch" style="background:#dcd9cf"></span>No data</div>`;
-  el.innerHTML = html;
+  return html;
+}
+function renderSingleLegend() {
+  const meta = metaOf(currentKey);
+  const body = buildSingleLegendBody(meta);
+  document.getElementById("legend").innerHTML = body;
+  // Floating on-map legend (always visible in single-variable mode)
+  const sml = document.getElementById("single-map-legend");
+  if (sml) {
+    sml.innerHTML = `
+      <div class="sml-title">${meta.label}</div>
+      <div class="sml-units">${meta.units || ""}</div>
+      ${body}`;
+  }
 }
 
 function renderBivLegend() {
@@ -1010,6 +1064,7 @@ function setMode(m) {
   document.getElementById("biv-legend").classList.toggle("hidden", single);
   document.getElementById("biv-story").classList.toggle("hidden", single);
   document.getElementById("biv-map-legend").classList.toggle("hidden", single);
+  document.getElementById("single-map-legend").classList.toggle("hidden", !single);
   if (!single) document.getElementById("detail-panel").classList.remove("open");
   applyCurrent();
 }
@@ -1291,7 +1346,7 @@ Promise.all([
   VARS = vars;
   GEO_TRACTS = tractsGeo;
   GEO_NTAS = ntasGeo;
-  GEO = GEO_TRACTS;
+  GEO = (geoLevel === "nta" && GEO_NTAS) ? GEO_NTAS : GEO_TRACTS;
   RELEASE = release;
   try {
     if (release && release.years) document.getElementById("release-name").textContent = release.years;
