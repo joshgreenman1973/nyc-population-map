@@ -309,7 +309,10 @@ json.dump(out_geo, open(DOCS / "tracts.geojson", "w"))
 print(f"Wrote {DOCS/'tracts.geojson'}  ({(DOCS/'tracts.geojson').stat().st_size/1_000_000:.2f} MB)")
 
 # ---------- variable metadata ----------
+# Variables list — ordered as a "neighborhood scouting" narrative:
+#   who lives there → how they're grouped → money → housing → safety → education → work → leftovers.
 VARS = [
+    # --- 1. People ---
     ("People", "pop_total", "Total population", "int", "people",
      "Total residents living in the tract."),
     ("People", "pop_density", "Population density", "num1", "people/sq mi",
@@ -321,6 +324,7 @@ VARS = [
     ("People", "pct_over65", "Share 65 and over", "pct", "%",
      "Share of residents 65 years or older."),
 
+    # --- 2. Race / ethnicity ---
     ("Race / ethnicity", "pct_white_nh", "White (non-Hispanic)", "pct", "%",
      "Share identifying as white alone and not Hispanic or Latino."),
     ("Race / ethnicity", "pct_black_nh", "Black (non-Hispanic)", "pct", "%",
@@ -330,6 +334,21 @@ VARS = [
     ("Race / ethnicity", "pct_hispanic", "Hispanic or Latino (any race)", "pct", "%",
      "Share identifying as Hispanic or Latino, of any race."),
 
+    # --- 3. Origin & language ---
+    ("Origin & language", "pct_foreign_born", "Foreign-born", "pct", "%",
+     "Share of residents born outside the United States."),
+    ("Origin & language", "pct_non_english_home", "Non-English at home", "pct", "%",
+     "Share of residents 5+ who speak a language other than English at home."),
+
+    # --- 4. Households ---
+    ("Households", "households", "Total households", "int", "households",
+     "Count of occupied housing units."),
+    ("Households", "avg_hh_size", "Average household size", "num2", "people",
+     "Average number of people living in each household."),
+    ("Households", "pct_owner_occupied", "Owner-occupied homes", "pct", "%",
+     "Share of occupied units that are owner-occupied."),
+
+    # --- 5. Income & poverty ---
     ("Income & poverty", "median_hh_income", "Median household income", "usd", "$",
      "Median annual income across all households."),
     ("Income & poverty", "pct_poverty", "Poverty rate", "pct", "%",
@@ -347,13 +366,7 @@ VARS = [
     ("Income & poverty", "pct_snap", "Receiving SNAP", "pct", "%",
      "Share of households that received SNAP / food-stamp benefits in the past year."),
 
-    ("Households", "households", "Total households", "int", "households",
-     "Count of occupied housing units."),
-    ("Households", "avg_hh_size", "Average household size", "num2", "people",
-     "Average number of people living in each household."),
-    ("Households", "pct_owner_occupied", "Owner-occupied homes", "pct", "%",
-     "Share of occupied units that are owner-occupied."),
-
+    # --- 6. Housing ---
     ("Housing", "median_gross_rent", "Median gross rent", "usd", "$/mo",
      "Median monthly gross rent paid by renters."),
     ("Housing", "median_home_value", "Median home value", "usd", "$",
@@ -361,16 +374,29 @@ VARS = [
     ("Housing", "median_rent_burden", "Median rent burden", "num1", "%",
      "Median gross rent as a percentage of household income."),
 
+    # --- 7. Crime ---
+    ("Crime (rolling 12 mo.)", "crime_total_rate", "Major-felony rate", "num1", "per 1,000 residents",
+     "All seven major felonies — murder, rape, robbery, felony assault, burglary, grand larceny, grand larceny of motor vehicle — per 1,000 residents over the most recent 12 months (NYPD)."),
+    ("Crime (rolling 12 mo.)", "crime_violent_rate", "Violent-crime rate", "num1", "per 1,000 residents",
+     "Murder, rape, robbery, and felony assault per 1,000 residents over the most recent 12 months (NYPD)."),
+    ("Crime (rolling 12 mo.)", "crime_property_rate", "Property-crime rate", "num1", "per 1,000 residents",
+     "Burglary, grand larceny, and grand larceny of motor vehicle per 1,000 residents over the most recent 12 months (NYPD)."),
+
+    # --- 8. Education ---
     ("Education", "pct_bachelor_plus", "Bachelor's degree or higher", "pct", "%",
      "Share of residents 25+ holding at least a bachelor's degree."),
     ("Education", "pct_hs_only", "High-school diploma only", "pct", "%",
      "Share of residents 25+ whose highest credential is a high-school diploma or equivalent."),
 
-    ("Origin & language", "pct_foreign_born", "Foreign-born", "pct", "%",
-     "Share of residents born outside the United States."),
-    ("Origin & language", "pct_non_english_home", "Non-English at home", "pct", "%",
-     "Share of residents 5+ who speak a language other than English at home."),
+    # --- 9. Schools (K-12) — pairs naturally with Education ---
+    ("Schools (K-12)", "pct_kids_public_k12", "K-12 students in public school", "pct", "%",
+     "Share of kindergarten-through-12th-grade students enrolled in public school."),
+    ("Schools (K-12)", "pct_kids_private_k12", "K-12 students in private school", "pct", "%",
+     "Share of kindergarten-through-12th-grade students enrolled in private school (Census combines parochial and independent private here)."),
+    ("Schools (K-12)", "k12_students", "K-12 students (count)", "int", "students",
+     "Total K-12 students in the tract."),
 
+    # --- 10. Work & commute ---
     ("Work & commute", "pct_in_labor_force", "In labor force (16+)", "pct", "%",
      "Share of residents 16+ in the civilian or armed-forces labor force."),
     ("Work & commute", "pct_unemployed", "Unemployment rate", "pct", "%",
@@ -382,11 +408,7 @@ VARS = [
     ("Work & commute", "pct_wfh", "Worked from home", "pct", "%",
      "Share of workers who worked primarily from home."),
 
-    ("Other", "pct_veteran", "Veterans (18+)", "pct", "%",
-     "Share of civilians 18+ who are veterans."),
-    ("Other", "pct_no_internet", "No internet access", "pct", "%",
-     "Share of households without any internet subscription."),
-
+    # --- 11. Vehicles — pairs naturally with commute ---
     ("Vehicles", "pct_no_vehicle", "Households with no vehicle", "pct", "%",
      "Share of households that have no vehicle available."),
     ("Vehicles", "pct_3plus_vehicles", "Households with 3+ vehicles", "pct", "%",
@@ -398,19 +420,11 @@ VARS = [
     ("Vehicles", "pct_renter_no_vehicle", "Renters without a vehicle", "pct", "%",
      "Share of renter-occupied households that have no vehicle."),
 
-    ("Schools (K-12)", "pct_kids_public_k12", "K-12 students in public school", "pct", "%",
-     "Share of kindergarten-through-12th-grade students enrolled in public school."),
-    ("Schools (K-12)", "pct_kids_private_k12", "K-12 students in private school", "pct", "%",
-     "Share of kindergarten-through-12th-grade students enrolled in private school (Census combines parochial and independent private here)."),
-    ("Schools (K-12)", "k12_students", "K-12 students (count)", "int", "students",
-     "Total K-12 students in the tract."),
-
-    ("Crime (rolling 12 mo.)", "crime_total_rate", "Major-felony rate", "num1", "per 1,000 residents",
-     "All seven major felonies — murder, rape, robbery, felony assault, burglary, grand larceny, grand larceny of motor vehicle — per 1,000 residents over the most recent 12 months (NYPD)."),
-    ("Crime (rolling 12 mo.)", "crime_violent_rate", "Violent-crime rate", "num1", "per 1,000 residents",
-     "Murder, rape, robbery, and felony assault per 1,000 residents over the most recent 12 months (NYPD)."),
-    ("Crime (rolling 12 mo.)", "crime_property_rate", "Property-crime rate", "num1", "per 1,000 residents",
-     "Burglary, grand larceny, and grand larceny of motor vehicle per 1,000 residents over the most recent 12 months (NYPD)."),
+    # --- 12. Other (always last) ---
+    ("Other", "pct_veteran", "Veterans (18+)", "pct", "%",
+     "Share of civilians 18+ who are veterans."),
+    ("Other", "pct_no_internet", "No internet access", "pct", "%",
+     "Share of households without any internet subscription."),
 ]
 
 vars_meta = [
