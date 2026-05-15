@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>New York City population explorer</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root {
+    --bg: #f7f6f1;
+    --panel: #ffffff;
+    --ink: #111111;
+    --ink-2: #4a4a4a;
+    --muted: #8a8780;
+    --rule: #d8d4c8;
+    --accent: #1f4e8d;
+    --paper: #efece2;
+    --shadow: 0 6px 24px rgba(0,0,0,0.08);
+    --serif: 'Iowan Old Style', 'Iowan', 'Georgia', 'Times New Roman', Times, serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Inter', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: var(--sans); }
+  a { color: var(--accent); }
+  h1, h2, h3 { font-family: var(--sans); font-weight: 600; letter-spacing: -0.01em; }
+  #app { display: grid; grid-template-columns: 340px 1fr; height: 100vh; }
+  @media (max-width: 820px) {
+    #app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    #sidebar { max-height: 50vh; overflow-y: auto; }
+  }
+  #sidebar {
+    background: var(--panel);
+    border-right: 1px solid var(--rule);
+    padding: 18px 20px 24px;
+    overflow-y: auto;
+  }
+  #sidebar h1 {
+    margin: 0 0 2px;
+    font-size: 19px;
+    line-height: 1.2;
+  }
+  #sidebar .sub {
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 1.4;
+    margin-bottom: 14px;
+  }
+
+  .section-label {
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 18px 0 6px;
+    font-weight: 600;
+  }
+
+  .var-group { margin-bottom: 4px; }
+  .var-group-title {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    font-weight: 600;
+    margin: 12px 0 4px;
+  }
+  .var-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 6px 8px;
+    margin: 1px 0;
+    font: inherit;
+    font-size: 13.5px;
+    color: var(--ink);
+    cursor: pointer;
+    line-height: 1.25;
+  }
+  .var-btn:hover { background: var(--paper); }
+  .var-btn.active {
+    background: var(--ink);
+    color: #fff;
+    border-color: var(--ink);
+  }
+
+  #current-meta {
+    background: var(--paper);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+  #current-meta .label { font-weight: 600; font-size: 14px; line-height: 1.25; }
+  #current-meta .desc { color: var(--ink-2); font-size: 12.5px; line-height: 1.4; margin-top: 4px; }
+  #current-meta .src { color: var(--muted); font-size: 11.5px; margin-top: 6px; }
+
+  #scale-toggle {
+    display: flex;
+    gap: 4px;
+    margin-top: 10px;
+    font-size: 11.5px;
+  }
+  #scale-toggle button {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--rule);
+    padding: 5px 8px;
+    border-radius: 5px;
+    font: inherit;
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+  #scale-toggle button.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  #legend {
+    margin-top: 10px;
+    font-size: 11.5px;
+    color: var(--ink-2);
+  }
+  #legend .row { display: flex; align-items: center; gap: 8px; margin: 2px 0; }
+  #legend .swatch { width: 22px; height: 12px; border: 1px solid rgba(0,0,0,0.08); border-radius: 2px; }
+
+  #map { height: 100%; }
+  .leaflet-container { background: var(--bg); font: inherit; }
+  .leaflet-bar a, .leaflet-bar a:hover { background: var(--panel); color: var(--ink); }
+  .tract-tooltip {
+    background: rgba(255,255,255,0.97);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 8px 10px;
+    box-shadow: var(--shadow);
+    font-size: 12.5px;
+    line-height: 1.35;
+    max-width: 240px;
+  }
+  .tract-tooltip .ttl { font-weight: 600; margin-bottom: 2px; }
+  .tract-tooltip .nta { color: var(--muted); font-size: 11px; margin-bottom: 4px; }
+  .tract-tooltip .val { font-family: var(--serif); font-size: 18px; line-height: 1; }
+  .tract-tooltip .units { color: var(--muted); font-size: 11.5px; margin-left: 4px; }
+
+  #detail-panel {
+    position: absolute; right: 14px; bottom: 14px; top: 14px;
+    width: 290px;
+    background: var(--panel);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 14px 16px 16px;
+    overflow-y: auto;
+    display: none;
+    z-index: 1000;
+    font-size: 13px;
+  }
+  #detail-panel.open { display: block; }
+  #detail-panel .close-btn {
+    float: right;
+    background: transparent;
+    border: 0;
+    font-size: 18px;
+    line-height: 1;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 2px 4px;
+  }
+  #detail-panel h3 { margin: 0 0 2px; font-size: 14.5px; }
+  #detail-panel .nta-name { color: var(--muted); font-size: 11.5px; margin-bottom: 12px; }
+  #detail-panel .det-group { font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 12px 0 4px; font-weight: 600; }
+  #detail-panel .det-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted var(--rule); }
+  #detail-panel .det-row .v { font-variant-numeric: tabular-nums; font-weight: 600; }
+  @media (max-width: 820px) {
+    #detail-panel { left: 14px; right: 14px; top: auto; bottom: 14px; width: auto; max-height: 40vh; }
+  }
+
+  #footer {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 18px;
+    line-height: 1.5;
+  }
+  #footer a { color: var(--ink-2); }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <h1>New York City population explorer</h1>
+    <div class="sub">Every census tract in the five boroughs, colored by the demographic metric you choose. Hover a tract for the value; click for a full profile.</div>
+
+    <div id="current-meta">
+      <div class="label" id="cur-label">—</div>
+      <div class="desc" id="cur-desc">—</div>
+      <div class="src" id="cur-src">—</div>
+      <div id="scale-toggle">
+        <button data-scale="quantile" class="active">Quantile</button>
+        <button data-scale="linear">Linear</button>
+      </div>
+      <div id="legend"></div>
+    </div>
+
+    <div class="section-label">Variable</div>
+    <div id="var-list"></div>
+
+    <div id="footer">
+      Data: <a href="https://api.censusreporter.org" target="_blank" rel="noopener">Census Reporter</a> mirror of the U.S. Census Bureau American Community Survey 5-year (<span id="release-name">2020–2024</span>). Tract geometry from <a href="https://www.nyc.gov/site/planning/data-maps/open-data.page" target="_blank" rel="noopener">NYC DCP</a>, shoreline-clipped 2020 vintage. Missing values shown in gray. See <a href="methodology.html">methodology</a>.
+    </div>
+  </aside>
+  <main style="position:relative;">
+    <div id="map"></div>
+    <div id="detail-panel">
+      <button class="close-btn" id="detail-close">×</button>
+      <h3 id="det-title">Tract</h3>
+      <div class="nta-name" id="det-nta"></div>
+      <div id="det-body"></div>
+    </div>
+  </main>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-array@3"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-scale@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-scale-chromatic@3"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-interpolate@3"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-color@3"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-format@3"></script>
+<script>
+// ---------- formatting ----------
+const fmtInt = d3.format(",.0f");
+const fmtUsd = v => (v >= 1000 ? "$" + d3.format(",.0f")(v) : "$" + d3.format(".0f")(v));
+const fmtPct = d3.format(".1f");
+const fmtNum1 = d3.format(",.1f");
+const fmtNum2 = d3.format(",.2f");
+function fmtValue(val, fmt) {
+  if (val == null || !isFinite(val)) return "—";
+  switch (fmt) {
+    case "int": return fmtInt(val);
+    case "usd": return fmtUsd(val);
+    case "pct": return fmtPct(val) + "%";
+    case "num1": return fmtNum1(val);
+    case "num2": return fmtNum2(val);
+    default: return String(val);
+  }
+}
+
+// ---------- state ----------
+let VARS = [];
+let GEO = null;
+let RELEASE = null;
+let currentKey = "pop_total";
+let scaleMode = "quantile"; // or "linear"
+let geoLayer = null;
+let map = null;
+let selectedGeoid = null;
+
+// ---------- color ramps ----------
+// Sequential metric → single-hue ramp.
+// Some metrics work better as diverging (e.g., race shares are bounded 0-100 with no strong "more is good")
+// but for simplicity we use sequential viridis-like ramps throughout, swapping palette by group.
+const PALETTES = {
+  default: d3.interpolateYlGnBu,
+  "Race / ethnicity": d3.interpolatePurples,
+  "Income & poverty": d3.interpolateYlOrRd,
+  "Households": d3.interpolateGreens,
+  "Housing": d3.interpolateOranges,
+  "Education": d3.interpolateBlues,
+  "Origin & language": d3.interpolateReds,
+  "Work & commute": d3.interpolateBuGn,
+  "Other": d3.interpolateGreys,
+  "People": d3.interpolateViridis,
+};
+
+function paletteFor(varMeta) {
+  return PALETTES[varMeta.group] || PALETTES.default;
+}
+
+// ---------- build the scale for current variable ----------
+function buildScale(varMeta) {
+  const values = GEO.features
+    .map(f => f.properties[varMeta.key])
+    .filter(v => v != null && isFinite(v));
+  if (values.length === 0) return null;
+  const palette = paletteFor(varMeta);
+  if (scaleMode === "quantile") {
+    // 7-bin quantile
+    const N = 7;
+    const breaks = [];
+    for (let i = 1; i < N; i++) breaks.push(d3.quantileSorted(values.slice().sort(d3.ascending), i / N));
+    const scale = d3.scaleThreshold().domain(breaks).range(d3.range(N).map(i => palette((i + 0.5) / N)));
+    scale.kind = "quantile";
+    scale.breaks = breaks;
+    scale.N = N;
+    scale.values = values;
+    return scale;
+  } else {
+    const [lo, hi] = d3.extent(values);
+    const scale = d3.scaleSequential(palette).domain([lo, hi]);
+    scale.kind = "linear";
+    scale.lo = lo; scale.hi = hi;
+    scale.values = values;
+    return scale;
+  }
+}
+
+let currentScale = null;
+
+function styleFor(props) {
+  const v = props[currentKey];
+  if (v == null || !isFinite(v)) {
+    return { fillColor: "#dcd9cf", color: "#bdbab0", weight: 0.3, fillOpacity: 0.7 };
+  }
+  return {
+    fillColor: currentScale(v),
+    color: "#ffffff",
+    weight: 0.3,
+    fillOpacity: 0.86,
+  };
+}
+
+function highlightStyle() {
+  return { color: "#111", weight: 1.6, fillOpacity: 0.95 };
+}
+
+// ---------- tooltip & detail ----------
+function tooltipHtml(props) {
+  const meta = VARS.find(v => v.key === currentKey);
+  const val = props[currentKey];
+  const valStr = fmtValue(val, meta.fmt);
+  const units = meta.units && meta.fmt !== "usd" && meta.fmt !== "pct" ? `<span class="units">${meta.units}</span>` : "";
+  return `<div class="tract-tooltip">
+    <div class="ttl">${props.borough || ""} · Tract ${props.ct_label || props.geoid}</div>
+    <div class="nta">${props.nta || ""}</div>
+    <div><span class="val">${valStr}</span>${units}</div>
+  </div>`;
+}
+
+function renderDetail(props) {
+  document.getElementById("detail-panel").classList.add("open");
+  document.getElementById("det-title").textContent = `${props.borough || "NYC"} · Tract ${props.ct_label || props.geoid}`;
+  document.getElementById("det-nta").textContent = props.nta || "";
+  // Group rows by VARS group
+  const groups = {};
+  VARS.forEach(v => {
+    if (!groups[v.group]) groups[v.group] = [];
+    groups[v.group].push(v);
+  });
+  let html = "";
+  Object.keys(groups).forEach(g => {
+    html += `<div class="det-group">${g}</div>`;
+    groups[g].forEach(v => {
+      const val = props[v.key];
+      html += `<div class="det-row"><span>${v.label}</span><span class="v">${fmtValue(val, v.fmt)}${v.fmt === "pct" || v.fmt === "usd" ? "" : (v.units ? " " + v.units : "")}</span></div>`;
+    });
+  });
+  document.getElementById("det-body").innerHTML = html;
+}
+
+document.getElementById("detail-close").addEventListener("click", () => {
+  document.getElementById("detail-panel").classList.remove("open");
+  if (selectedGeoid != null && geoLayer) {
+    geoLayer.eachLayer(l => { if (l.feature.properties.geoid === selectedGeoid) geoLayer.resetStyle(l); });
+    selectedGeoid = null;
+  }
+});
+
+// ---------- legend ----------
+function renderLegend() {
+  const meta = VARS.find(v => v.key === currentKey);
+  const el = document.getElementById("legend");
+  if (!currentScale) { el.innerHTML = ""; return; }
+  let html = "";
+  if (currentScale.kind === "quantile") {
+    const breaks = currentScale.breaks;
+    const N = currentScale.N;
+    const palette = paletteFor(meta);
+    for (let i = 0; i < N; i++) {
+      const lo = i === 0 ? d3.min(currentScale.values) : breaks[i-1];
+      const hi = i === N - 1 ? d3.max(currentScale.values) : breaks[i];
+      const color = palette((i + 0.5) / N);
+      html += `<div class="row"><span class="swatch" style="background:${color}"></span>${fmtValue(lo, meta.fmt)} – ${fmtValue(hi, meta.fmt)}</div>`;
+    }
+  } else {
+    // gradient + min/max
+    const palette = paletteFor(meta);
+    const stops = [];
+    for (let i = 0; i <= 10; i++) stops.push(palette(i / 10));
+    html += `<div class="row"><span style="display:inline-block;width:100%;height:12px;background:linear-gradient(to right,${stops.join(",")});border-radius:2px;"></span></div>`;
+    html += `<div class="row" style="justify-content:space-between;"><span>${fmtValue(currentScale.lo, meta.fmt)}</span><span>${fmtValue(currentScale.hi, meta.fmt)}</span></div>`;
+  }
+  // missing
+  html += `<div class="row" style="margin-top:6px;"><span class="swatch" style="background:#dcd9cf"></span>No data</div>`;
+  el.innerHTML = html;
+}
+
+// ---------- variable picker ----------
+function buildVarList() {
+  const root = document.getElementById("var-list");
+  const groups = {};
+  VARS.forEach(v => { (groups[v.group] = groups[v.group] || []).push(v); });
+  let html = "";
+  Object.keys(groups).forEach(g => {
+    html += `<div class="var-group"><div class="var-group-title">${g}</div>`;
+    groups[g].forEach(v => {
+      html += `<button class="var-btn" data-key="${v.key}">${v.label}</button>`;
+    });
+    html += `</div>`;
+  });
+  root.innerHTML = html;
+  root.querySelectorAll(".var-btn").forEach(b => {
+    b.addEventListener("click", () => setVariable(b.dataset.key));
+  });
+}
+
+function setActiveBtn() {
+  document.querySelectorAll(".var-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.key === currentKey);
+  });
+}
+
+function updateMeta() {
+  const m = VARS.find(v => v.key === currentKey);
+  document.getElementById("cur-label").textContent = m.label;
+  document.getElementById("cur-desc").textContent = m.desc;
+  document.getElementById("cur-src").textContent = `Source: ACS ${RELEASE && RELEASE.years || "5-year"} · ${m.units}`;
+}
+
+function setVariable(key) {
+  currentKey = key;
+  currentScale = buildScale(VARS.find(v => v.key === key));
+  setActiveBtn();
+  updateMeta();
+  renderLegend();
+  if (geoLayer) geoLayer.setStyle(f => styleFor(f.properties));
+}
+
+// scale mode toggle
+document.querySelectorAll("#scale-toggle button").forEach(b => {
+  b.addEventListener("click", () => {
+    scaleMode = b.dataset.scale;
+    document.querySelectorAll("#scale-toggle button").forEach(x => x.classList.toggle("active", x === b));
+    currentScale = buildScale(VARS.find(v => v.key === currentKey));
+    renderLegend();
+    if (geoLayer) geoLayer.setStyle(f => styleFor(f.properties));
+  });
+});
+
+// ---------- map ----------
+function initMap() {
+  map = L.map("map", { zoomControl: true, preferCanvas: true }).setView([40.7128, -73.95], 11);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> · <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd', maxZoom: 18,
+  }).addTo(map);
+
+  geoLayer = L.geoJSON(GEO, {
+    style: f => styleFor(f.properties),
+    onEachFeature: (feat, layer) => {
+      layer.bindTooltip(() => tooltipHtml(feat.properties), { sticky: true, className: "tract-tip-wrap", direction: "auto", opacity: 1 });
+      layer.on("mouseover", () => layer.setStyle(highlightStyle()));
+      layer.on("mouseout", () => {
+        if (feat.properties.geoid !== selectedGeoid) geoLayer.resetStyle(layer);
+      });
+      layer.on("click", () => {
+        if (selectedGeoid) {
+          geoLayer.eachLayer(l => { if (l.feature.properties.geoid === selectedGeoid) geoLayer.resetStyle(l); });
+        }
+        selectedGeoid = feat.properties.geoid;
+        layer.setStyle(highlightStyle());
+        renderDetail(feat.properties);
+      });
+    },
+  }).addTo(map);
+
+  // Reference labels (street names) on top
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png", {
+    subdomains: 'abcd', maxZoom: 18, pane: 'shadowPane', opacity: 0.85,
+  }).addTo(map);
+
+  map.fitBounds(geoLayer.getBounds(), { padding: [10, 10] });
+}
+
+// Override leaflet tooltip default styling — we already produce styled HTML
+const tipStyle = document.createElement("style");
+tipStyle.textContent = `.leaflet-tooltip.tract-tip-wrap { background: transparent; border: 0; box-shadow: none; padding: 0; }
+.leaflet-tooltip.tract-tip-wrap::before { display: none; }`;
+document.head.appendChild(tipStyle);
+
+// ---------- bootstrap ----------
+Promise.all([
+  fetch("variables.json").then(r => r.json()),
+  fetch("tracts.geojson").then(r => r.json()),
+  fetch("release.json").then(r => r.json()).catch(() => ({})),
+]).then(([vars, geo, release]) => {
+  VARS = vars;
+  GEO = geo;
+  RELEASE = release;
+  if (release && release.years) document.getElementById("release-name").textContent = release.years;
+  buildVarList();
+  setVariable(currentKey);
+  initMap();
+});
+</script>
+</body>
+</html>

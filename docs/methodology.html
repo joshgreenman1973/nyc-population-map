@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Methodology — New York City population explorer</title>
+<style>
+  :root { --ink:#111; --ink-2:#4a4a4a; --muted:#8a8780; --rule:#d8d4c8; --bg:#f7f6f1; --accent:#1f4e8d; }
+  html, body { background: var(--bg); color: var(--ink); margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', system-ui, sans-serif;
+    line-height: 1.55; }
+  main { max-width: 720px; margin: 0 auto; padding: 36px 22px 80px; }
+  h1 { font-size: 26px; letter-spacing: -0.01em; margin: 0 0 4px; }
+  .lede { color: var(--ink-2); font-size: 15px; margin-bottom: 22px; }
+  h2 { font-size: 17px; margin: 28px 0 6px; }
+  h3 { font-size: 13.5px; margin: 18px 0 4px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.05em; }
+  p, li { font-size: 14.5px; }
+  a { color: var(--accent); }
+  code { background: #efece2; padding: 1px 5px; border-radius: 3px; font-size: 13px; }
+  .back { display: inline-block; margin-bottom: 18px; font-size: 12.5px; color: var(--ink-2); }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; margin: 12px 0 20px; }
+  th, td { border-bottom: 1px solid var(--rule); padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #efece2; }
+  .note { background: #efece2; border-left: 3px solid var(--ink); padding: 10px 14px; margin: 14px 0; font-size: 13.5px; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="index.html">← Back to map</a>
+  <h1>Methodology &amp; sources</h1>
+  <div class="lede">How this map was built, what every variable means, and what its limits are.</div>
+
+  <h2>Data sources</h2>
+  <ul>
+    <li><strong>Demographic, social, economic, and housing variables:</strong> U.S. Census Bureau, <a href="https://www.census.gov/programs-surveys/acs" target="_blank" rel="noopener">American Community Survey</a> 5-year estimates for 2020–2024, fetched via the <a href="https://api.censusreporter.org" target="_blank" rel="noopener">Census Reporter API</a> (a no-key cache of Census API data maintained by the Census Reporter project).</li>
+    <li><strong>Tract geometry:</strong> NYC Department of City Planning, <a href="https://www.nyc.gov/site/planning/data-maps/open-data/dwn-census.page" target="_blank" rel="noopener">2020 Census Tracts</a> (shoreline-clipped). Tract polygons are simplified to roughly 10% of their original resolution to keep the page lightweight.</li>
+  </ul>
+
+  <h2>Geography</h2>
+  <p>All five New York City boroughs at the <strong>2020 census tract</strong> level — 2,325 tracts in total. A tract is a small statistical area that typically contains 1,200–8,000 people. Tract boundaries are stable enough to compare across years but small enough to surface meaningful neighborhood-scale differences.</p>
+  <p>The "Borough" and "NTA" (Neighborhood Tabulation Area) labels in the detail panel come from NYC DCP's official 2020 designations. Tracts that fall in parks, cemeteries, airports, or industrial areas may show small or zero population.</p>
+
+  <h2>How values are calculated</h2>
+  <p>Every variable in the map either comes directly from an ACS estimate (medians and totals) or is computed as a share, using the <strong>denominator the Census Bureau publishes alongside that table</strong>. For example:</p>
+  <ul>
+    <li><strong>Poverty rate</strong> = <code>B17001_002</code> (residents below poverty) ÷ <code>B17001_001</code> (residents for whom poverty status was determined). The denominator excludes people in institutional group quarters, which is why the rate is not divided by total population.</li>
+    <li><strong>Share Hispanic or Latino</strong> = <code>B03002_012</code> ÷ <code>B03002_001</code>. The race/ethnicity shares come from table B03002, which separates Hispanic ethnicity from race so the four categories shown (white non-Hispanic, Black non-Hispanic, Asian non-Hispanic, Hispanic any race) do not double-count.</li>
+    <li><strong>Population density</strong> = total population ÷ land area in square miles. Land area is computed from the shape area of the shoreline-clipped tract polygon (NAD83 NY State Plane Long Island, ftUS).</li>
+  </ul>
+
+  <h3>Full variable list</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Source table / formula</th></tr></thead>
+    <tbody>
+      <tr><td>Total population</td><td>B01003_001</td></tr>
+      <tr><td>Population density</td><td>B01003_001 ÷ tract land area (sq mi)</td></tr>
+      <tr><td>Median age</td><td>B01002_001</td></tr>
+      <tr><td>Share under 18</td><td>Σ B01001 male+female under-18 cells ÷ B01003_001</td></tr>
+      <tr><td>Share 65 and over</td><td>Σ B01001 male+female 65+ cells ÷ B01003_001</td></tr>
+      <tr><td>White, Black, Asian (non-Hispanic), Hispanic</td><td>B03002_003 / 004 / 006 / 012 ÷ B03002_001</td></tr>
+      <tr><td>Median household income</td><td>B19013_001</td></tr>
+      <tr><td>Household income bands</td><td>Sums of B19001 cells ÷ B19001_001</td></tr>
+      <tr><td>Poverty rate</td><td>B17001_002 ÷ B17001_001</td></tr>
+      <tr><td>Receiving SNAP</td><td>B22010_002 ÷ B22010_001</td></tr>
+      <tr><td>Households / avg household size</td><td>B11016_001 / B25010_001</td></tr>
+      <tr><td>Owner-occupied homes</td><td>B25003_002 ÷ B25003_001</td></tr>
+      <tr><td>Median gross rent / home value</td><td>B25064_001 / B25077_001</td></tr>
+      <tr><td>Median rent burden</td><td>B25071_001 (median rent as % of household income)</td></tr>
+      <tr><td>Bachelor's+ / HS only</td><td>Σ B15003_022–025 / Σ B15003_017–018 ÷ B15003_001</td></tr>
+      <tr><td>Foreign-born</td><td>B05002_013 ÷ B05002_001</td></tr>
+      <tr><td>Non-English at home</td><td>(C16001_001 − C16001_002) ÷ C16001_001</td></tr>
+      <tr><td>In labor force (16+)</td><td>B23025_002 ÷ B23025_001</td></tr>
+      <tr><td>Unemployment rate</td><td>B23025_005 ÷ B23025_002</td></tr>
+      <tr><td>Commute mode shares</td><td>B08301_010 / 019 / 021 ÷ B08301_001</td></tr>
+      <tr><td>Veterans (18+)</td><td>B21001_002 ÷ B21001_001</td></tr>
+      <tr><td>No internet access</td><td>B28002_013 ÷ B28002_001</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Color scales</h2>
+  <p>The map offers two binning options for every variable:</p>
+  <ul>
+    <li><strong>Quantile (default)</strong>: seven equally populated bins so each color contains roughly the same number of tracts. This emphasizes relative ranking across the city and is the right choice for surfacing patterns.</li>
+    <li><strong>Linear</strong>: a continuous gradient from the lowest to highest value, which preserves the absolute spacing between tracts but can be visually dominated by outliers.</li>
+  </ul>
+  <p>Each thematic group uses a different single-hue palette to make the active variable immediately recognizable.</p>
+
+  <h2>Known limits</h2>
+  <div class="note">
+    The American Community Survey is a sample, not a census. At the tract level — especially for small subgroups in low-population tracts — margins of error can be large. Treat single-tract values as estimates with uncertainty, not as exact counts.
+  </div>
+  <ul>
+    <li>Tract-level estimates are 5-year rolling averages (2020–2024). Conditions in any single year may differ.</li>
+    <li>Tracts with very small denominators (e.g., few owner-occupied units) will show missing values or unstable percentages. Missing values are shown in gray.</li>
+    <li>"No data" can mean the Census Bureau suppressed an estimate for confidentiality, the denominator was zero, or the tract has no relevant population.</li>
+    <li>Race/ethnicity categories follow Census Bureau conventions and do not represent every possible identity. People of "two or more races" and "some other race" are not shown separately here.</li>
+    <li>Income brackets reflect dollar values not adjusted for inflation or cost-of-living differences across tracts.</li>
+  </ul>
+
+  <h2>Reproducing this map</h2>
+  <p>The Python build script (<code>build.py</code>) fetches all ACS variables from Census Reporter, joins them to NYC DCP tract geometry, computes the derived shares, and writes <code>tracts.geojson</code> and <code>variables.json</code> into the <code>docs/</code> folder. The page is plain HTML/JS — Leaflet for the map, d3 for color scales, no build step. Source is available on GitHub.</p>
+
+  <p><a class="back" href="index.html">← Back to map</a></p>
+</main>
+</body>
+</html>
