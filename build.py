@@ -605,12 +605,20 @@ for nf in nta_base["features"]:
     # Sum DOE schools across member tracts
     schools = 0
     doe_k12 = 0
+    pop_2020_sum = 0
+    has_2020 = False
     for g in member_tracts:
         t_rec = derived.get(g, {})
         schools += t_rec.get("doe_public_schools") or 0
         doe_k12 += t_rec.get("doe_public_k12_enrolled") or 0
+        p20 = t_rec.get("pop_2020")
+        if p20 is not None:
+            pop_2020_sum += p20
+            has_2020 = True
     rec["doe_public_schools"] = schools
     rec["doe_public_k12_enrolled"] = doe_k12
+    if has_2020:
+        rec["pop_2020"] = pop_2020_sum
 
     # Sum election votes across member tracts and recompute candidate vote shares
     if elec_path.exists():
@@ -714,10 +722,12 @@ print(f"Wrote {DOCS/'tracts.geojson'}  ({(DOCS/'tracts.geojson').stat().st_size/
 #   who lives there → how they're grouped → money → housing → safety → education → work → leftovers.
 VARS = [
     # --- 1. People ---
-    ("People", "pop_total", "Total population", "int", "people",
-     "Total residents living in the tract."),
+    ("People", "pop_total", "Total population (ACS, 2020–24 avg)", "int", "people",
+     "Total residents in the tract — ACS 2020–24 5-year survey estimate. Has a margin of error; the 2020 Decennial count below is more precise but 5 years older."),
+    ("People", "pop_2020", "Total population (2020 Decennial count)", "int", "people",
+     "Total residents in the tract from the 2020 Decennial Census — a 100% count, not a survey estimate. No margin of error. Roughly 5 years stale by now."),
     ("People", "pop_density", "Population density", "num1", "people/sq mi",
-     "Residents per square mile of land area."),
+     "ACS residents per square mile of land area."),
     ("People", "median_age", "Median age", "num1", "years",
      "Half of residents are older than this age, half younger."),
     ("People", "pct_under18", "Share under 18", "pct", "%",
