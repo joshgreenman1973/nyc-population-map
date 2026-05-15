@@ -464,11 +464,9 @@ if doe_path.exists():
         rec = by_tract_doe.get(tract)
         if rec:
             d["doe_public_k12_enrolled"] = rec.get("k12_enrolled") or 0
-            d["doe_public_schools"]      = rec.get("schools") or 0
             matched += 1
         else:
             d["doe_public_k12_enrolled"] = 0
-            d["doe_public_schools"]      = 0
     print(f"  attached counts to all {len(derived)} tracts (non-zero: {sum(1 for v in derived.values() if v.get('doe_public_k12_enrolled'))})")
 else:
     print(f"No {doe_path.name} found — skipping DOE merge (run fetch_doe_schools.py first).")
@@ -699,7 +697,6 @@ for nf in nta_base["features"]:
         if p20 is not None:
             pop_2020_sum += p20
             has_2020 = True
-    rec["doe_public_schools"] = schools
     rec["doe_public_k12_enrolled"] = doe_k12
     if has_2020:
         rec["pop_2020"] = pop_2020_sum
@@ -965,8 +962,6 @@ VARS = [
      "Total K-12 students living in the tract (ACS, by student residence)."),
     ("Schools (K-12)", "doe_public_k12_enrolled", "Public-school K-12 enrolled (by school location)", "int", "students",
      "K-12 students enrolled at public schools located in this tract, from NYC DOE Demographic Snapshot rosters. Counts by school location, not student residence — so the number is high in tracts that contain a large school and zero in tracts with no school."),
-    ("Schools (K-12)", "doe_public_schools", "Public K-12 schools in tract", "int", "schools",
-     "Number of NYC DOE public K-12 schools physically located in the tract (includes charters operating under DOE; excludes private/parochial)."),
 
     # --- 10. Work & commute ---
     ("Work & commute", "pct_in_labor_force", "In labor force (16+)", "pct", "%",
