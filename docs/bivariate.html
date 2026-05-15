@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NYC bivariate maps — population explorer</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root {
+    --bg: #f7f6f1; --panel: #fff; --ink: #111; --ink-2: #4a4a4a;
+    --muted: #8a8780; --rule: #d8d4c8; --accent: #1f4e8d; --paper: #efece2;
+    --shadow: 0 6px 24px rgba(0,0,0,0.08);
+    --sans: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Inter', system-ui, sans-serif;
+    --serif: 'Iowan Old Style','Iowan','Georgia',serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans)}
+  a{color:var(--accent)}
+  #app{display:grid;grid-template-columns:360px 1fr;height:100vh}
+  @media (max-width:860px){#app{grid-template-columns:1fr;grid-template-rows:auto 1fr}#sidebar{max-height:55vh;overflow-y:auto}}
+  #sidebar{background:var(--panel);border-right:1px solid var(--rule);padding:18px 20px 24px;overflow-y:auto}
+  h1{margin:0 0 2px;font-size:19px;letter-spacing:-0.01em}
+  .sub{color:var(--muted);font-size:12.5px;line-height:1.45;margin-bottom:14px}
+  .nav{font-size:12px;margin-bottom:8px}
+  .nav a{color:var(--ink-2);text-decoration:none;margin-right:10px}
+  .nav a.active{color:var(--ink);font-weight:600;border-bottom:2px solid var(--ink)}
+  .section-label{font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px;font-weight:600}
+
+  .preset{
+    display:block;width:100%;text-align:left;background:var(--paper);
+    border:1px solid transparent;border-radius:7px;padding:10px 12px;margin:6px 0;
+    font:inherit;font-size:13px;color:var(--ink);cursor:pointer;line-height:1.3
+  }
+  .preset:hover{background:#e5e0d0}
+  .preset.active{background:var(--ink);color:#fff}
+  .preset .nm{font-weight:600;font-size:13.5px;margin-bottom:2px}
+  .preset .axes{font-size:11.5px;opacity:0.85}
+  .preset.active .axes{opacity:0.9}
+
+  #current{
+    background:var(--paper);border-radius:8px;padding:12px 14px;margin-bottom:10px
+  }
+  #current h2{font-size:14.5px;margin:0 0 6px;line-height:1.25}
+  #current .axes{font-size:12px;color:var(--ink-2);line-height:1.4}
+  #current .axes b{color:var(--ink)}
+  #current .story{font-size:12.5px;color:var(--ink-2);line-height:1.45;margin-top:8px;border-top:1px solid var(--rule);padding-top:8px}
+
+  .picker{margin-top:12px}
+  .picker label{display:block;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:8px 0 3px}
+  .picker select{width:100%;padding:6px 8px;font:inherit;font-size:13px;border:1px solid var(--rule);border-radius:5px;background:#fff}
+
+  #legend-wrap{margin-top:12px}
+  .biv-legend{display:inline-block;position:relative;padding:6px 0 18px 28px}
+  .biv-legend table{border-collapse:collapse}
+  .biv-legend td{width:22px;height:22px;border:1px solid rgba(0,0,0,0.04)}
+  .biv-legend .ax-y{position:absolute;top:0;left:0;height:66px;writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;color:var(--ink-2);text-align:center;width:14px;line-height:1.1;display:flex;align-items:center;justify-content:center}
+  .biv-legend .ax-x{font-size:10px;color:var(--ink-2);text-align:center;width:66px;margin-left:28px;margin-top:2px;line-height:1.1}
+  .biv-legend .ax-arrow{position:absolute;font-size:9px;color:var(--muted)}
+  .biv-legend .lo-x{position:absolute;left:28px;top:72px;font-size:9px;color:var(--muted)}
+  .biv-legend .hi-x{position:absolute;left:88px;top:72px;font-size:9px;color:var(--muted)}
+  .biv-legend .lo-y{position:absolute;left:14px;top:60px;font-size:9px;color:var(--muted);transform:rotate(-90deg);transform-origin:left top}
+  .biv-legend .hi-y{position:absolute;left:14px;top:8px;font-size:9px;color:var(--muted);transform:rotate(-90deg);transform-origin:left top}
+
+  #map{height:100%}
+  .leaflet-container{background:var(--bg);font:inherit}
+  .tract-tip{background:rgba(255,255,255,0.97);border:1px solid var(--rule);border-radius:6px;padding:8px 10px;box-shadow:var(--shadow);font-size:12.5px;line-height:1.4;max-width:240px}
+  .tract-tip .ttl{font-weight:600;margin-bottom:2px}
+  .tract-tip .nta{color:var(--muted);font-size:11px;margin-bottom:6px}
+  .tract-tip .pair{display:flex;justify-content:space-between;gap:10px;font-size:12px;margin:2px 0}
+  .tract-tip .pair .v{font-variant-numeric:tabular-nums;font-weight:600}
+  .leaflet-tooltip.tract-tip-wrap{background:transparent;border:0;box-shadow:none;padding:0}
+  .leaflet-tooltip.tract-tip-wrap::before{display:none}
+
+  #footer{font-size:11px;color:var(--muted);margin-top:16px;line-height:1.5}
+  #footer a{color:var(--ink-2)}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <div class="nav"><a href="index.html">Single variable</a> <a class="active" href="bivariate.html">Bivariate</a></div>
+    <h1>NYC bivariate maps</h1>
+    <div class="sub">Color by two variables at once. The 3×3 grid reads like a story: corners are the four extremes, the middle is "average on both."</div>
+
+    <div id="current">
+      <h2 id="cur-title">—</h2>
+      <div class="axes" id="cur-axes"></div>
+      <div id="legend-wrap"></div>
+      <div class="story" id="cur-story"></div>
+    </div>
+
+    <div class="section-label">Ten preset combinations</div>
+    <div id="presets"></div>
+
+    <div class="section-label">Pick any two</div>
+    <div class="picker">
+      <label>X axis (horizontal in legend)</label>
+      <select id="pick-x"></select>
+      <label>Y axis (vertical in legend)</label>
+      <select id="pick-y"></select>
+    </div>
+
+    <div id="footer">
+      Data: ACS 2020–2024 5-year via Census Reporter; geometry: NYC DCP 2020 census tracts. 3×3 quantile bins, ~775 tracts per cell. Missing values shown in gray. See <a href="methodology.html">methodology</a>.
+    </div>
+  </aside>
+  <main style="position:relative">
+    <div id="map"></div>
+  </main>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-array@3"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-format@3"></script>
+<script>
+const fmtInt=d3.format(",.0f"), fmtUsd=v=>"$"+d3.format(",.0f")(v), fmtPct=d3.format(".1f"), fmtNum1=d3.format(",.1f"), fmtNum2=d3.format(",.2f");
+function fmt(v,f){if(v==null||!isFinite(v))return"—";switch(f){case"int":return fmtInt(v);case"usd":return fmtUsd(v);case"pct":return fmtPct(v)+"%";case"num1":return fmtNum1(v);case"num2":return fmtNum2(v);default:return String(v)}}
+
+// Stevens 3x3 bivariate palette (blue × pink) — a teal/magenta scheme often called "DkViolet"
+// Rows go bottom-to-top (Y low → Y high), columns left-to-right (X low → X high)
+const PALETTE = [
+  ["#e8e8e8","#ace4e4","#5ac8c8"],
+  ["#dfb0d6","#a5add3","#5698b9"],
+  ["#be64ac","#8c62aa","#3b4994"],
+];
+function cell(xb,yb){return PALETTE[yb][xb]}
+
+let VARS=[], GEO=null, RELEASE=null, map=null, geoLayer=null;
+let xKey="median_hh_income", yKey="pct_hispanic", curStory="";
+
+const PRESETS = [
+  {x:"median_hh_income", y:"pct_hispanic",     name:"Income × Hispanic share",          story:"The diagonal corners are where the wealth-ethnicity overlap is starkest: low-income tracts that are heavily Hispanic, versus high-income tracts that are not."},
+  {x:"pct_bachelor_plus", y:"median_gross_rent", name:"Education × rent",                 story:"Where the college-degree premium has been capitalized into rents — and the rare tracts where one is high but the other isn't."},
+  {x:"pct_foreign_born", y:"pct_non_english_home", name:"Foreign-born × non-English at home", story:"On the diagonal, immigrant communities that keep their first language at home. Off-diagonal: English-speaking immigrant enclaves, or English-isolated U.S.-born residents."},
+  {x:"pct_poverty",       y:"pct_under18",       name:"Poverty × kids",                   story:"The top-right corner is the child-poverty geography of New York City: tracts where poverty rates and the share of children are both high."},
+  {x:"pct_owner_occupied",y:"pct_over65",        name:"Owner-occupied × 65 and over",     story:"Older homeowners aging in place cluster in the upper right. The upper left is the more vulnerable picture — older renters."},
+  {x:"median_hh_income",  y:"pct_public_transit", name:"Income × transit commute",         story:"Transit-rich-and-rich (Manhattan core) shows up in the upper right; transit-dependent low income is upper left; the lower-right is car-leaning higher-income outer borough."},
+  {x:"pct_bachelor_plus", y:"pct_wfh",            name:"Education × work-from-home",        story:"The laptop-class geography. The upper-right tracts are where a degree and a home office overlap; the lower-right are college-degreed but back at the office."},
+  {x:"median_hh_income",  y:"median_rent_burden", name:"Income × rent burden",              story:"The two ways to be cost-burdened: low income paying any rent (upper left), versus higher income paying outsized rents (upper right). Lower-left tracts are the most affordable; lower-right the most comfortable."},
+  {x:"pct_white_nh",      y:"pct_black_nh",       name:"White × Black",                     story:"A segregation map. Tracts on the diagonal are dominated by one group or the other; the middle cell is the most integrated. The lower-left is where neither population dominates — likely Asian or Hispanic majority."},
+  {x:"pop_density",       y:"median_home_value",  name:"Density × home value",              story:"Where dense doesn't mean cheap — and where it does. Upper-right is high-density, high-value (the Manhattan/brownstone-Brooklyn pattern); upper-left is dense but lower-value outer-borough rental stock."},
+];
+
+// 3x3 quantile binning per variable
+function bin3(values){
+  const sorted=values.slice().filter(v=>v!=null&&isFinite(v)).sort(d3.ascending);
+  const q1=d3.quantileSorted(sorted,1/3), q2=d3.quantileSorted(sorted,2/3);
+  return v=>{
+    if(v==null||!isFinite(v))return null;
+    if(v<q1)return 0; if(v<q2)return 1; return 2;
+  };
+}
+let binX=null, binY=null;
+
+function rebuild(){
+  const xs=GEO.features.map(f=>f.properties[xKey]);
+  const ys=GEO.features.map(f=>f.properties[yKey]);
+  binX=bin3(xs); binY=bin3(ys);
+}
+
+function styleOf(p){
+  const bx=binX(p[xKey]), by=binY(p[yKey]);
+  if(bx==null||by==null) return {fillColor:"#dcd9cf",color:"#bdbab0",weight:0.3,fillOpacity:0.75};
+  return {fillColor:cell(bx,by),color:"#fff",weight:0.25,fillOpacity:0.9};
+}
+function highlight(){return {color:"#111",weight:1.6,fillOpacity:0.96}}
+
+function metaOf(k){return VARS.find(v=>v.key===k)}
+function axisLabel(k){const m=metaOf(k);return m?m.label:k}
+
+function tooltipHtml(p){
+  const mx=metaOf(xKey), my=metaOf(yKey);
+  return `<div class="tract-tip">
+    <div class="ttl">${p.borough||""} · Tract ${p.ct_label||p.geoid}</div>
+    <div class="nta">${p.nta||""}</div>
+    <div class="pair"><span>${mx.label}</span><span class="v">${fmt(p[xKey],mx.fmt)}</span></div>
+    <div class="pair"><span>${my.label}</span><span class="v">${fmt(p[yKey],my.fmt)}</span></div>
+  </div>`;
+}
+
+function updateChrome(){
+  const mx=metaOf(xKey), my=metaOf(yKey);
+  document.getElementById("cur-title").textContent = `${mx.label} × ${my.label}`;
+  document.getElementById("cur-axes").innerHTML = `<b>X</b>: ${mx.desc}<br><b>Y</b>: ${my.desc}`;
+  document.getElementById("cur-story").textContent = curStory || "Cells split each variable into three equal-sized groups across tracts — low, middle, high — and color the map by which 3×3 cell a tract falls in.";
+  renderLegend();
+  document.querySelectorAll(".preset").forEach(b=>{
+    b.classList.toggle("active", b.dataset.x===xKey && b.dataset.y===yKey);
+  });
+  document.getElementById("pick-x").value=xKey;
+  document.getElementById("pick-y").value=yKey;
+}
+
+function renderLegend(){
+  const mx=metaOf(xKey), my=metaOf(yKey);
+  // Build sample-min / -max from the data
+  const xs=GEO.features.map(f=>f.properties[xKey]).filter(v=>v!=null&&isFinite(v)).sort(d3.ascending);
+  const ys=GEO.features.map(f=>f.properties[yKey]).filter(v=>v!=null&&isFinite(v)).sort(d3.ascending);
+  const xlo=fmt(xs[0],mx.fmt), xhi=fmt(xs[xs.length-1],mx.fmt);
+  const ylo=fmt(ys[0],my.fmt), yhi=fmt(ys[ys.length-1],my.fmt);
+  let table = '<table><tbody>';
+  for(let y=2;y>=0;y--){
+    table += '<tr>';
+    for(let x=0;x<3;x++){ table += `<td style="background:${cell(x,y)}"></td>`; }
+    table += '</tr>';
+  }
+  table += '</tbody></table>';
+  document.getElementById("legend-wrap").innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;font-size:11px;color:var(--ink-2)">
+      <div style="display:flex;flex-direction:column;align-items:center;font-size:10px">
+        <div style="white-space:nowrap;color:var(--ink-2);margin-bottom:2px">↑ ${my.label}</div>
+        <div style="display:flex;align-items:flex-end;gap:6px">
+          <div style="display:flex;flex-direction:column;justify-content:space-between;height:66px;font-size:9px;color:var(--muted);text-align:right">
+            <span>${yhi}</span><span>${ylo}</span>
+          </div>
+          ${table}
+        </div>
+        <div style="display:flex;justify-content:space-between;width:66px;margin-left:24px;font-size:9px;color:var(--muted);margin-top:2px">
+          <span>${xlo}</span><span>${xhi}</span>
+        </div>
+        <div style="font-size:10px;margin-top:2px">→ ${mx.label}</div>
+      </div>
+    </div>`;
+}
+
+function setPair(x,y,story){
+  xKey=x; yKey=y; curStory=story||"";
+  rebuild();
+  updateChrome();
+  if(geoLayer) geoLayer.setStyle(f=>styleOf(f.properties));
+}
+
+function buildPresets(){
+  const root=document.getElementById("presets");
+  root.innerHTML = PRESETS.map((p,i)=>`
+    <button class="preset" data-x="${p.x}" data-y="${p.y}">
+      <div class="nm">${i+1}. ${p.name}</div>
+      <div class="axes">${axisLabel(p.x)} × ${axisLabel(p.y)}</div>
+    </button>`).join("");
+  root.querySelectorAll(".preset").forEach((b,i)=>{
+    b.addEventListener("click",()=>setPair(b.dataset.x,b.dataset.y,PRESETS[i].story));
+  });
+}
+
+function buildPickers(){
+  const sx=document.getElementById("pick-x"), sy=document.getElementById("pick-y");
+  const groups={};
+  VARS.forEach(v=>{(groups[v.group]=groups[v.group]||[]).push(v)});
+  function opts(){
+    let h="";
+    Object.keys(groups).forEach(g=>{
+      h+=`<optgroup label="${g}">`;
+      groups[g].forEach(v=>{h+=`<option value="${v.key}">${v.label}</option>`});
+      h+=`</optgroup>`;
+    });
+    return h;
+  }
+  sx.innerHTML=opts(); sy.innerHTML=opts();
+  sx.addEventListener("change",()=>setPair(sx.value,yKey,""));
+  sy.addEventListener("change",()=>setPair(xKey,sy.value,""));
+}
+
+function initMap(){
+  map=L.map("map",{zoomControl:true,preferCanvas:true}).setView([40.7128,-73.95],11);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",{
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> · <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains:'abcd',maxZoom:18
+  }).addTo(map);
+  geoLayer=L.geoJSON(GEO,{
+    style:f=>styleOf(f.properties),
+    onEachFeature:(feat,layer)=>{
+      layer.bindTooltip(()=>tooltipHtml(feat.properties),{sticky:true,className:"tract-tip-wrap",direction:"auto",opacity:1});
+      layer.on("mouseover",()=>layer.setStyle(highlight()));
+      layer.on("mouseout",()=>geoLayer.resetStyle(layer));
+    }
+  }).addTo(map);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",{subdomains:'abcd',maxZoom:18,pane:'shadowPane',opacity:0.85}).addTo(map);
+  map.fitBounds(geoLayer.getBounds(),{padding:[10,10]});
+}
+
+Promise.all([
+  fetch("variables.json").then(r=>r.json()),
+  fetch("tracts.geojson").then(r=>r.json()),
+  fetch("release.json").then(r=>r.json()).catch(()=>({}))
+]).then(([vars,geo,release])=>{
+  VARS=vars; GEO=geo; RELEASE=release;
+  buildPresets(); buildPickers();
+  // Default: first preset
+  const p0=PRESETS[0];
+  setPair(p0.x,p0.y,p0.story);
+  initMap();
+});
+</script>
+</body>
+</html>
