@@ -31,6 +31,8 @@ TABLE_BATCHES = [
     ["B01003", "B01002", "B01001", "B03002", "B19013", "B19001", "B17001", "B11016", "B25010", "B15003", "B05002"],
     # Housing, language, work, other
     ["C16001", "B25003", "B25064", "B25077", "B25071", "B08301", "B23025", "B21001", "B22010", "B28002"],
+    # Vehicles + schools
+    ["B08201", "B25044", "B14002"],
 ]
 
 
@@ -141,6 +143,39 @@ for tract, d in all_data.items():
     english_only = get(d, "C16001002")
     non_english = (lang_total - english_only) if (lang_total is not None and english_only is not None) else None
 
+    # ---- Vehicles (B08201 = households × vehicles, B25044 = tenure × vehicles) ----
+    veh_total = get(d, "B08201001")
+    veh_0     = get(d, "B08201002")
+    veh_1     = get(d, "B08201003")
+    veh_2     = get(d, "B08201004")
+    veh_3     = get(d, "B08201005")
+    veh_4plus = get(d, "B08201006")
+    veh_3plus = sum_safe(d, ["B08201005", "B08201006"])
+    # Weighted average vehicles per household; use 4.5 as midpoint for the "4 or more" bucket.
+    if veh_total and veh_total > 0 and all(v is not None for v in [veh_0, veh_1, veh_2, veh_3, veh_4plus]):
+        avg_veh = (0*veh_0 + 1*veh_1 + 2*veh_2 + 3*veh_3 + 4.5*veh_4plus) / veh_total
+    else:
+        avg_veh = None
+    # Owner-occupied no vehicle vs renter-occupied no vehicle
+    own_total = get(d, "B25044002")
+    own_no_v  = get(d, "B25044003")
+    rent_total= get(d, "B25044009")
+    rent_no_v = get(d, "B25044010")
+
+    # ---- Schools (B14002 K-12 by public vs. private) ----
+    # K-12 = kindergarten through grade 12; sum male + female.
+    k12_public = sum_safe(d, [
+        "B14002008", "B14002011", "B14002014", "B14002017",  # male K, 1-4, 5-8, 9-12 public
+        "B14002032", "B14002035", "B14002038", "B14002041",  # female K, 1-4, 5-8, 9-12 public
+    ])
+    k12_private = sum_safe(d, [
+        "B14002009", "B14002012", "B14002015", "B14002018",  # male K, 1-4, 5-8, 9-12 private
+        "B14002033", "B14002036", "B14002039", "B14002042",  # female K, 1-4, 5-8, 9-12 private
+    ])
+    k12_total = None
+    if k12_public is not None and k12_private is not None:
+        k12_total = k12_public + k12_private
+
     derived[tract] = {
         "pop_total": pop,
         "median_age": get(d, "B01002001"),
@@ -183,6 +218,18 @@ for tract, d in all_data.items():
 
         "pct_veteran": pct(get(d, "B21001002"), vet_total),
         "pct_no_internet": pct(get(d, "B28002013"), internet_total),
+
+        # Vehicles (B08201 / B25044)
+        "pct_no_vehicle":        pct(veh_0,     veh_total),
+        "pct_3plus_vehicles":    pct(veh_3plus, veh_total),
+        "avg_vehicles_per_hh":   avg_veh,
+        "pct_owner_no_vehicle":  pct(own_no_v,  own_total),
+        "pct_renter_no_vehicle": pct(rent_no_v, rent_total),
+
+        # Schools (B14002 K-12 by public vs. private)
+        "pct_kids_public_k12":   pct(k12_public,  k12_total),
+        "pct_kids_private_k12":  pct(k12_private, k12_total),
+        "k12_students":          int(k12_total) if k12_total else None,
     }
 
 
@@ -339,6 +386,24 @@ VARS = [
      "Share of civilians 18+ who are veterans."),
     ("Other", "pct_no_internet", "No internet access", "pct", "%",
      "Share of households without any internet subscription."),
+
+    ("Vehicles", "pct_no_vehicle", "Households with no vehicle", "pct", "%",
+     "Share of households that have no vehicle available."),
+    ("Vehicles", "pct_3plus_vehicles", "Households with 3+ vehicles", "pct", "%",
+     "Share of households with three or more vehicles available."),
+    ("Vehicles", "avg_vehicles_per_hh", "Average vehicles per household", "num2", "vehicles",
+     "Average number of vehicles per household (the \"4 or more\" bucket is counted as 4.5)."),
+    ("Vehicles", "pct_owner_no_vehicle", "Homeowners without a vehicle", "pct", "%",
+     "Share of owner-occupied households that have no vehicle — a distinctively dense-city pattern."),
+    ("Vehicles", "pct_renter_no_vehicle", "Renters without a vehicle", "pct", "%",
+     "Share of renter-occupied households that have no vehicle."),
+
+    ("Schools (K-12)", "pct_kids_public_k12", "K-12 students in public school", "pct", "%",
+     "Share of kindergarten-through-12th-grade students enrolled in public school."),
+    ("Schools (K-12)", "pct_kids_private_k12", "K-12 students in private school", "pct", "%",
+     "Share of kindergarten-through-12th-grade students enrolled in private school (Census combines parochial and independent private here)."),
+    ("Schools (K-12)", "k12_students", "K-12 students (count)", "int", "students",
+     "Total K-12 students in the tract."),
 
     ("Crime (rolling 12 mo.)", "crime_total_rate", "Major-felony rate", "num1", "per 1,000 residents",
      "All seven major felonies — murder, rape, robbery, felony assault, burglary, grand larceny, grand larceny of motor vehicle — per 1,000 residents over the most recent 12 months (NYPD)."),

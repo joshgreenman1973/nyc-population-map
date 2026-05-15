@@ -415,6 +415,8 @@ const PALETTES = {
   "Work & commute":        d3.interpolateBuGn,
   "Other":                 d3.interpolateGreys,
   "Crime (rolling 12 mo.)":d3.interpolateYlOrBr,   // yellow-orange-brown: light = low, dark = high
+  "Vehicles":              d3.interpolateYlGnBu,   // yellow-green-blue
+  "Schools (K-12)":        d3.interpolateRdPu,     // red-purple
 };
 function paletteFor(varMeta) { return PALETTES[varMeta.group] || PALETTES.default; }
 
@@ -450,6 +452,8 @@ const PRESETS = [
     story: "Where dense doesn't mean cheap — and where it does. Upper-right is high-density, high-value (the Manhattan/brownstone-Brooklyn pattern); upper-left is dense but lower-value outer-borough rental stock." },
   { x: "pct_poverty",        y: "crime_violent_rate",  name: "Poverty × violent crime",
     story: "The classic disadvantage-and-crime overlap. The upper-right is where high poverty rates and high violent-crime rates compound. Tracts on the lower diagonal — high poverty but low violent crime, or low poverty but elevated violent crime — are the ones that complicate the simple story." },
+  { x: "median_hh_income",   y: "pct_no_vehicle",      name: "Income × no-car households",
+    story: "In most American cities car ownership rises with income. New York inverts that. The upper-right cell is the New York anomaly — high-income tracts where the majority of households have no car. The lower-right is the more national-feeling pattern: higher income, more vehicles." },
 ];
 
 // ===== single-variable color scale =====
