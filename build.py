@@ -378,6 +378,32 @@ for tract, d in all_data.items():
         else: rec[key + '_moe'] = round(moe_val, 2)
     derived[tract] = rec
 
+# ---------- merge election results (optional) ----------
+elec_path = DOCS / "elections_by_tract.json"
+if elec_path.exists():
+    print("Merging election results...")
+    ej = json.load(open(elec_path))
+    elec = ej.get("tracts", {})
+    matched = 0
+    for tract, d in derived.items():
+        rec = elec.get(tract, {})
+        if not rec:
+            continue
+        # Copy all *_pct + total fields straight in
+        for k, v in rec.items():
+            if k.endswith("_pct") or k.endswith("_total") or k.startswith("pres_") or k.startswith("mayor_"):
+                d[k] = v
+        # Derived: D-share shift from 2020 to 2024 presidential (percentage points)
+        d20 = rec.get("pres_2020_d_pct")
+        d24 = rec.get("pres_2024_d_pct")
+        if d20 is not None and d24 is not None:
+            d["pres_d_shift_2020_2024"] = d24 - d20
+        matched += 1
+    print(f"  attached election data to {matched} tracts")
+else:
+    print(f"No {elec_path.name} — run fetch_elections.py to populate.")
+
+
 # ---------- merge NYC DOE public-school enrollment (optional) ----------
 doe_path = DOCS / "doe_k12_by_tract.json"
 doe_meta = None
@@ -586,6 +612,55 @@ for nf in nta_base["features"]:
     rec["doe_public_schools"] = schools
     rec["doe_public_k12_enrolled"] = doe_k12
 
+    # Sum election votes across member tracts and recompute candidate vote shares
+    if elec_path.exists():
+        # Collect raw count fields from members and sum
+        count_keys = set()
+        for g in member_tracts:
+            t_rec = derived.get(g, {})
+            for k in t_rec:
+                if (k.startswith("pres_") or k.startswith("mayor_")) and not k.endswith("_pct") and not k.endswith("_total") and not k.endswith("_shift_2020_2024"):
+                    count_keys.add(k)
+        sums = {k: 0 for k in count_keys}
+        for g in member_tracts:
+            t_rec = derived.get(g, {})
+            for k in count_keys:
+                v = t_rec.get(k)
+                if isinstance(v, (int, float)):
+                    sums[k] += v
+        # Stash raw counts
+        for k, v in sums.items():
+            rec[k] = v
+        # Recompute D/R shares per election
+        for year in ("2020", "2024"):
+            d = sums.get(f"pres_{year}_d") or 0
+            r = sums.get(f"pres_{year}_r") or 0
+            tot = d + r
+            if tot >= 25:
+                rec[f"pres_{year}_d_pct"] = 100.0 * d / tot
+                rec[f"pres_{year}_r_pct"] = 100.0 * r / tot
+                rec[f"pres_{year}_total"] = tot
+        if rec.get("pres_2020_d_pct") is not None and rec.get("pres_2024_d_pct") is not None:
+            rec["pres_d_shift_2020_2024"] = rec["pres_2024_d_pct"] - rec["pres_2020_d_pct"]
+        # 2021 mayor
+        a21 = sums.get("mayor_2021_adams") or 0
+        s21 = sums.get("mayor_2021_sliwa") or 0
+        t21 = a21 + s21
+        if t21 >= 25:
+            rec["mayor_2021_adams_pct"] = 100.0 * a21 / t21
+            rec["mayor_2021_sliwa_pct"] = 100.0 * s21 / t21
+            rec["mayor_2021_total"] = t21
+        # 2025 mayor
+        m25 = sums.get("mayor_2025_mamdani") or 0
+        c25 = sums.get("mayor_2025_cuomo")   or 0
+        s25 = sums.get("mayor_2025_sliwa")   or 0
+        t25 = m25 + c25 + s25
+        if t25 >= 25:
+            rec["mayor_2025_mamdani_pct"] = 100.0 * m25 / t25
+            rec["mayor_2025_cuomo_pct"]   = 100.0 * c25 / t25
+            rec["mayor_2025_sliwa_pct"]   = 100.0 * s25 / t25
+            rec["mayor_2025_total"] = t25
+
     # Sum crime across member tracts (numerators) and recompute rate using aggregated pop
     if crime_path.exists():
         cv_count = cp_count = ct_count = 0
@@ -752,7 +827,37 @@ VARS = [
     ("Vehicles", "pct_renter_no_vehicle", "Renters without a vehicle", "pct", "%",
      "Share of renter-occupied households that have no vehicle."),
 
-    # --- 12. Other (always last) ---
+    # --- 12. Elections (NYC BoE) ---
+    ("Elections", "pres_2024_d_pct", "Harris vote share, 2024 president", "pct", "%",
+     "Kamala Harris share of the two-party (D+R) vote in the November 2024 general election. NYC BoE ED-level results, aggregated to tracts by ED centroid."),
+    ("Elections", "pres_2024_r_pct", "Trump vote share, 2024 president", "pct", "%",
+     "Donald Trump share of the two-party (D+R) vote in the November 2024 general election. NYC BoE ED-level results."),
+    ("Elections", "pres_2024_total", "Major-party votes cast, 2024 president", "int", "votes",
+     "Total D+R votes cast for president in 2024 in this tract."),
+    ("Elections", "pres_2020_d_pct", "Biden vote share, 2020 president", "pct", "%",
+     "Joe Biden share of the two-party (D+R) vote in the November 2020 general election. NYC BoE ED-level results."),
+    ("Elections", "pres_2020_r_pct", "Trump vote share, 2020 president", "pct", "%",
+     "Donald Trump share of the two-party (D+R) vote in the November 2020 general election."),
+    ("Elections", "pres_2020_total", "Major-party votes cast, 2020 president", "int", "votes",
+     "Total D+R votes cast for president in 2020 in this tract."),
+    ("Elections", "pres_d_shift_2020_2024", "Democratic shift, 2020 → 2024 president", "num1", "percentage points",
+     "Change in the Democratic share of the two-party presidential vote from 2020 to 2024. Negative = Republican gain; positive = Democratic gain."),
+    ("Elections", "mayor_2025_mamdani_pct", "Mamdani vote share, 2025 mayor", "pct", "%",
+     "Zohran Mamdani share of the three-way (Mamdani + Cuomo + Sliwa) vote in the November 2025 general mayoral election."),
+    ("Elections", "mayor_2025_cuomo_pct", "Cuomo vote share, 2025 mayor", "pct", "%",
+     "Andrew Cuomo share of the three-way mayoral vote in 2025 (running as an independent on his own line)."),
+    ("Elections", "mayor_2025_sliwa_pct", "Sliwa vote share, 2025 mayor", "pct", "%",
+     "Curtis Sliwa (Republican) share of the three-way mayoral vote in 2025."),
+    ("Elections", "mayor_2025_total", "Major-candidate votes cast, 2025 mayor", "int", "votes",
+     "Total Mamdani + Cuomo + Sliwa votes cast in this tract in 2025."),
+    ("Elections", "mayor_2021_adams_pct", "Adams vote share, 2021 mayor", "pct", "%",
+     "Eric Adams (Democrat) share of the two-major-candidate (Adams + Sliwa) vote in the November 2021 general mayoral election."),
+    ("Elections", "mayor_2021_sliwa_pct", "Sliwa vote share, 2021 mayor", "pct", "%",
+     "Curtis Sliwa (Republican) share of the two-major-candidate vote in 2021."),
+    ("Elections", "mayor_2021_total", "Major-candidate votes cast, 2021 mayor", "int", "votes",
+     "Total Adams + Sliwa votes cast in this tract in 2021."),
+
+    # --- 13. Other (always last) ---
     ("Other", "pct_veteran", "Veterans (18+)", "pct", "%",
      "Share of civilians 18+ who are veterans."),
     ("Other", "pct_no_internet", "No internet access", "pct", "%",

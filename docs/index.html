@@ -610,8 +610,32 @@ const PALETTES = {
   "Crime (rolling 12 mo.)":d3.interpolateYlOrBr,   // yellow-orange-brown: light = low, dark = high
   "Vehicles":              d3.interpolateYlGnBu,   // yellow-green-blue
   "Schools (K-12)":        d3.interpolateRdPu,     // red-purple
+  "Elections":             d3.interpolatePurples,  // overridden per-variable below for partisan ramps
 };
-function paletteFor(varMeta) { return PALETTES[varMeta.group] || PALETTES.default; }
+
+// Per-variable palette overrides. Used when a single thematic group contains variables
+// that visually need different ramps (e.g. Democratic vs. Republican vote share).
+const VAR_PALETTES = {
+  // 2024 / 2020 presidential
+  pres_2024_d_pct: d3.interpolateBlues,
+  pres_2024_r_pct: d3.interpolateReds,
+  pres_2020_d_pct: d3.interpolateBlues,
+  pres_2020_r_pct: d3.interpolateReds,
+  // 2021 mayoral
+  mayor_2021_adams_pct: d3.interpolateBlues,
+  mayor_2021_sliwa_pct: d3.interpolateReds,
+  // 2025 mayoral
+  mayor_2025_mamdani_pct: d3.interpolateBlues,
+  mayor_2025_cuomo_pct:   d3.interpolateGreens,   // independent — distinct from D & R
+  mayor_2025_sliwa_pct:   d3.interpolateReds,
+  // 2020 → 2024 D shift: diverging (centered at zero in linear mode; quantile still works visually)
+  pres_d_shift_2020_2024: d3.interpolateRdBu,
+};
+function paletteFor(varMeta) {
+  // Per-variable override (e.g. blue for Democratic shares, red for Republican)
+  if (VAR_PALETTES[varMeta.key]) return VAR_PALETTES[varMeta.key];
+  return PALETTES[varMeta.group] || PALETTES.default;
+}
 
 // 3x3 bivariate palette ("DkViolet" style)
 const BIV_PALETTE = [
@@ -645,6 +669,12 @@ const PRESETS = [
     story: "Where dense doesn't mean cheap — and where it does. Upper-right is high-density, high-value (the Manhattan/brownstone-Brooklyn pattern); upper-left is dense but lower-value outer-borough rental stock." },
   { x: "pct_poverty",        y: "crime_violent_rate",  name: "Poverty × violent crime",
     story: "The classic disadvantage-and-crime overlap. The upper-right is where high poverty rates and high violent-crime rates compound. Tracts on the lower diagonal — high poverty but low violent crime, or low poverty but elevated violent crime — are the ones that complicate the simple story." },
+  { x: "median_hh_income",   y: "pres_2024_r_pct",     name: "Income × 2024 Trump share",
+    story: "Where Trump did best in NYC by income. The upper-right is the high-income high-Trump cell (parts of Staten Island, Bayside, Riverdale, Manhattan-Beach); the upper-left is the surprise — lower-income tracts that swung Republican. The lower half is the Democratic coalition." },
+  { x: "pct_bachelor_plus",  y: "pres_d_shift_2020_2024", name: "Education × D shift, 2020→2024",
+    story: "Did college-educated areas hold for Democrats while less-educated tracts swung Trump? The cells tell you. Y values near zero are tracts that didn't shift. Strongly negative Y = Trump gain; positive Y = Democratic gain. The diagonal answers the diploma-divide question for NYC." },
+  { x: "pct_foreign_born",   y: "pres_d_shift_2020_2024", name: "Foreign-born × D shift, 2020→2024",
+    story: "Immigrant tracts famously moved toward Trump from 2020 to 2024. This shows where. Top half = D gain (rare); bottom half = R gain. The right column is high-foreign-born tracts — if the lower-right is the densest, immigrant neighborhoods shifted hardest." },
   { x: "median_hh_income",   y: "pct_no_vehicle",      name: "Income × no-car households",
     story: "In most American cities car ownership rises with income. New York inverts that. The upper-right cell is the New York anomaly — high-income tracts where the majority of households have no car. The lower-right is the more national-feeling pattern: higher income, more vehicles." },
 ];
