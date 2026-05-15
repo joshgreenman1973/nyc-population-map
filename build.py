@@ -190,8 +190,8 @@ def derive_one(d, m):
         inc_60_100 = sum_safe(d, ["B19001012", "B19001013"])
         inc_100_150 = sum_safe(d, ["B19001014", "B19001015"])
         inc_150_200 = sum_safe(d, ["B19001016"])
-    inc_200p    = sum_safe(d, ["B19001017"])
-    inc_150p    = sum_safe(d, ["B19001016", "B19001017"])
+        inc_200p    = sum_safe(d, ["B19001017"])
+        inc_150p    = sum_safe(d, ["B19001016", "B19001017"])
         bach_plus = sum_safe(d, ["B15003022", "B15003023", "B15003024", "B15003025"])
         hs_only = sum_safe(d, ["B15003017", "B15003018"])
 
