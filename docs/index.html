@@ -401,18 +401,20 @@ let binX = null, binY = null;
 let map = null, geoLayer = null, selectedGeoid = null;
 
 // ===== palettes =====
+// All single-variable palettes follow the same convention: light = low, dark = high.
+// Each thematic group gets a distinct hue so the active topic is visually recognizable.
 const PALETTES = {
   default: d3.interpolateYlGnBu,
-  "Race / ethnicity": d3.interpolatePurples,
-  "Income & poverty": d3.interpolateYlOrRd,
-  "Households": d3.interpolateGreens,
-  "Housing": d3.interpolateOranges,
-  "Education": d3.interpolateBlues,
-  "Origin & language": d3.interpolateReds,
-  "Work & commute": d3.interpolateBuGn,
-  "Other": d3.interpolateGreys,
-  "People": d3.interpolateViridis,
-  "Crime (rolling 12 mo.)": d3.interpolateInferno,
+  "People":                d3.interpolateGnBu,    // green-blue: density / age / population
+  "Race / ethnicity":      d3.interpolatePurples,
+  "Income & poverty":      d3.interpolateYlOrRd,
+  "Households":            d3.interpolateGreens,
+  "Housing":               d3.interpolateOranges,
+  "Education":             d3.interpolateBlues,
+  "Origin & language":     d3.interpolatePuRd,     // purple-red: distinct from Crime
+  "Work & commute":        d3.interpolateBuGn,
+  "Other":                 d3.interpolateGreys,
+  "Crime (rolling 12 mo.)":d3.interpolateYlOrBr,   // yellow-orange-brown: light = low, dark = high
 };
 function paletteFor(varMeta) { return PALETTES[varMeta.group] || PALETTES.default; }
 
@@ -446,6 +448,8 @@ const PRESETS = [
     story: "A segregation map. Tracts on the diagonal are dominated by one group or the other; the middle cell is the most integrated. The lower-left is where neither population dominates — likely Asian- or Hispanic-majority." },
   { x: "pop_density",        y: "median_home_value",   name: "Density × home value",
     story: "Where dense doesn't mean cheap — and where it does. Upper-right is high-density, high-value (the Manhattan/brownstone-Brooklyn pattern); upper-left is dense but lower-value outer-borough rental stock." },
+  { x: "pct_poverty",        y: "crime_violent_rate",  name: "Poverty × violent crime",
+    story: "The classic disadvantage-and-crime overlap. The upper-right is where high poverty rates and high violent-crime rates compound. Tracts on the lower diagonal — high poverty but low violent crime, or low poverty but elevated violent crime — are the ones that complicate the simple story." },
 ];
 
 // ===== single-variable color scale =====
