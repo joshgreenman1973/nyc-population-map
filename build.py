@@ -52,8 +52,11 @@ def fetch(url, retries=4):
 
 
 def fetch_county(county_fips):
-    """Return dict[tract_geoid] -> dict[column_id] -> estimate."""
-    out = {}
+    """Return (estimates, errors, release).
+    estimates / errors: dict[tract_geoid] -> dict[column_id] -> value (or MOE).
+    """
+    est_out = {}
+    moe_out = {}
     release = None
     for batch in TABLE_BATCHES:
         url = (
@@ -64,23 +67,26 @@ def fetch_county(county_fips):
         data = fetch(url)
         release = data.get("release")
         for geo, tables in data["data"].items():
-            # geo is like "14000US36005000100" — keep the last 11 chars
             tract = geo[-11:]
-            row = out.setdefault(tract, {})
+            erow = est_out.setdefault(tract, {})
+            mrow = moe_out.setdefault(tract, {})
             for tbl, payload in tables.items():
-                est = payload.get("estimate", {})
-                for col, val in est.items():
-                    row[col] = val
-    return out, release
+                for col, val in payload.get("estimate", {}).items():
+                    erow[col] = val
+                for col, val in payload.get("error", {}).items():
+                    mrow[col] = val
+    return est_out, moe_out, release
 
 
 print("Fetching from Census Reporter (no API key required)...")
 all_data = {}
+all_moes = {}
 release_meta = None
 for cfips, name in NYC_COUNTIES.items():
     print(f"  {cfips} {name} ...")
-    rows, rel = fetch_county(cfips)
-    all_data.update(rows)
+    est, moe, rel = fetch_county(cfips)
+    all_data.update(est)
+    all_moes.update(moe)
     release_meta = rel
 print(f"Got {len(all_data)} tracts. Release: {release_meta}")
 
@@ -109,10 +115,56 @@ def pct(num, denom):
     return 100.0 * num / denom
 
 
+# ---------- MOE propagation (ACS Handbook Appendix 3 formulas) ----------
+# All MOEs from Census Reporter are at the 90% confidence level.
+import math as _math
+
+def moe_sum(moes):
+    """MOE of a sum of independent cells = sqrt(Σ MOE²)."""
+    vals = [m for m in moes if m is not None]
+    if not vals:
+        return None
+    return _math.sqrt(sum(m * m for m in vals))
+
+
+def moe_proportion(num, num_moe, denom, denom_moe):
+    """MOE of a proportion p = x / y where x is a subset of y (ACS Handbook).
+
+    moe(p) = sqrt(moe(x)² − p² · moe(y)²) / y
+    If the radicand is negative (rare; happens when x is close to y), fall back to the ratio formula.
+    Returns the MOE of the proportion in the same units as the proportion (0–1, not %).
+    """
+    if num is None or denom in (None, 0) or num_moe is None or denom_moe is None:
+        return None
+    p = num / denom
+    rad = num_moe * num_moe - p * p * denom_moe * denom_moe
+    if rad < 0:
+        # fallback to ratio formula (independent x and y assumption)
+        rad = num_moe * num_moe + p * p * denom_moe * denom_moe
+    return _math.sqrt(rad) / denom
+
+
+def moe_pct(num, num_moe, denom, denom_moe):
+    """As moe_proportion but in percentage points."""
+    m = moe_proportion(num, num_moe, denom, denom_moe)
+    return m * 100 if m is not None else None
+
+
+def cv(estimate, moe):
+    """Coefficient of variation = MOE / (1.645 · estimate). Used for reliability flagging.
+    Census Bureau guidance: CV ≤ 0.12 reliable, 0.12–0.40 use with caution, > 0.40 unreliable.
+    """
+    if estimate is None or moe is None or estimate == 0:
+        return None
+    return moe / (1.645 * abs(estimate))
+
+
 # ---------- derive metrics ----------
 derived = {}
+RELIABILITY_THRESHOLD = 0.30  # MOE > 30% of estimate → flag as unreliable
 for tract, d in all_data.items():
-    pop = get(d, "B01003001")
+    m = all_moes.get(tract, {})
+    pop = get(d, "B01003001"); pop_moe = get(m, "B01003001")
     total_race = get(d, "B03002001")
     hh = get(d, "B11016001")
     inc_hh = get(d, "B19001001")
@@ -233,6 +285,97 @@ for tract, d in all_data.items():
         "pct_kids_private_k12":  pct(k12_private, k12_total),
         "k12_students":          int(k12_total) if k12_total else None,
     }
+
+    # ===== MOEs for headline variables =====
+    # Sum-of-cells MOEs for derived numerators
+    under18_moe = moe_sum([get(m, k) for k in [
+        "B01001003","B01001004","B01001005","B01001006",
+        "B01001027","B01001028","B01001029","B01001030"]])
+    over65_moe = moe_sum([get(m, k) for k in [
+        "B01001020","B01001021","B01001022","B01001023","B01001024","B01001025",
+        "B01001044","B01001045","B01001046","B01001047","B01001048","B01001049"]])
+    bach_plus_moe = moe_sum([get(m, k) for k in ["B15003022","B15003023","B15003024","B15003025"]])
+    hs_only_moe   = moe_sum([get(m, k) for k in ["B15003017","B15003018"]])
+    inc_u30_moe   = moe_sum([get(m, f"B19001{i:03d}") for i in range(2, 7)])
+    inc_150p_moe  = moe_sum([get(m, f"B19001{i:03d}") for i in [16, 17]])
+    # Non-English: total - English-only. Difference MOE ≈ sum-of-squares.
+    non_eng_moe = moe_sum([get(m, "C16001001"), get(m, "C16001002")])
+    # K-12 public/private/total sums
+    k12_pub_moe = moe_sum([get(m, k) for k in [
+        "B14002008","B14002011","B14002014","B14002017",
+        "B14002032","B14002035","B14002038","B14002041"]])
+    k12_pri_moe = moe_sum([get(m, k) for k in [
+        "B14002009","B14002012","B14002015","B14002018",
+        "B14002033","B14002036","B14002039","B14002042"]])
+    k12_tot_moe = moe_sum([k12_pub_moe, k12_pri_moe])
+
+    moes = {
+        # Direct estimates / medians
+        "pop_total":          pop_moe,
+        "median_age":         get(m, "B01002001"),
+        "median_hh_income":   get(m, "B19013001"),
+        "median_gross_rent":  get(m, "B25064001"),
+        "median_home_value":  get(m, "B25077001"),
+        "median_rent_burden": get(m, "B25071001"),
+        "avg_hh_size":        get(m, "B25010001"),
+        "households":         get(m, "B11016001"),
+        "k12_students":       k12_tot_moe,
+        # Age shares
+        "pct_under18": moe_pct(under18, under18_moe, pop, pop_moe),
+        "pct_over65":  moe_pct(over65,  over65_moe,  pop, pop_moe),
+        # Race / ethnicity shares — denominator is B03002_001 (= pop for these purposes)
+        "pct_white_nh":  moe_pct(get(d,"B03002003"), get(m,"B03002003"), total_race, get(m,"B03002001")),
+        "pct_black_nh":  moe_pct(get(d,"B03002004"), get(m,"B03002004"), total_race, get(m,"B03002001")),
+        "pct_asian_nh":  moe_pct(get(d,"B03002006"), get(m,"B03002006"), total_race, get(m,"B03002001")),
+        "pct_hispanic":  moe_pct(get(d,"B03002012"), get(m,"B03002012"), total_race, get(m,"B03002001")),
+        # Poverty
+        "pct_poverty":   moe_pct(get(d,"B17001002"), get(m,"B17001002"), pov_total, get(m,"B17001001")),
+        # Income brackets — just the two tail brackets (most editorial weight)
+        "pct_hh_under30k":  moe_pct(inc_u30,  inc_u30_moe,  inc_hh, get(m,"B19001001")),
+        "pct_hh_150kplus":  moe_pct(inc_150p, inc_150p_moe, inc_hh, get(m,"B19001001")),
+        # SNAP, tenure
+        "pct_snap":             moe_pct(get(d,"B22010002"), get(m,"B22010002"), snap_total, get(m,"B22010001")),
+        "pct_owner_occupied":   moe_pct(get(d,"B25003002"), get(m,"B25003002"), tenure, get(m,"B25003001")),
+        # Education
+        "pct_bachelor_plus":    moe_pct(bach_plus, bach_plus_moe, edu, get(m,"B15003001")),
+        "pct_hs_only":          moe_pct(hs_only,   hs_only_moe,   edu, get(m,"B15003001")),
+        # Origin / language
+        "pct_foreign_born":     moe_pct(get(d,"B05002013"), get(m,"B05002013"), fb_total, get(m,"B05002001")),
+        "pct_non_english_home": moe_pct(non_english, non_eng_moe, lang_total, get(m,"C16001001")),
+        # Work
+        "pct_in_labor_force":   moe_pct(lf_in, get(m,"B23025002"), lf_total, get(m,"B23025001")),
+        "pct_unemployed":       moe_pct(get(d,"B23025005"), get(m,"B23025005"), lf_civilian, get(m,"B23025003")),
+        "pct_public_transit":   moe_pct(get(d,"B08301010"), get(m,"B08301010"), commute, get(m,"B08301001")),
+        "pct_walked":           moe_pct(get(d,"B08301019"), get(m,"B08301019"), commute, get(m,"B08301001")),
+        "pct_wfh":              moe_pct(get(d,"B08301021"), get(m,"B08301021"), commute, get(m,"B08301001")),
+        # Other
+        "pct_veteran":     moe_pct(get(d,"B21001002"), get(m,"B21001002"), vet_total,      get(m,"B21001001")),
+        "pct_no_internet": moe_pct(get(d,"B28002013"), get(m,"B28002013"), internet_total, get(m,"B28002001")),
+        # Vehicles
+        "pct_no_vehicle":        moe_pct(veh_0,     get(m,"B08201002"), veh_total,  get(m,"B08201001")),
+        "pct_3plus_vehicles":    moe_pct(veh_3plus, moe_sum([get(m,"B08201005"),get(m,"B08201006")]), veh_total, get(m,"B08201001")),
+        "pct_owner_no_vehicle":  moe_pct(own_no_v,  get(m,"B25044003"), own_total,  get(m,"B25044002")),
+        "pct_renter_no_vehicle": moe_pct(rent_no_v, get(m,"B25044010"), rent_total, get(m,"B25044009")),
+        # Schools
+        "pct_kids_public_k12":   moe_pct(k12_public,  k12_pub_moe, k12_total, k12_tot_moe),
+        "pct_kids_private_k12":  moe_pct(k12_private, k12_pri_moe, k12_total, k12_tot_moe),
+    }
+
+    # Attach MOE companion fields. Reliability tiers (Census Bureau guidance):
+    #   moe_ratio = moe / |estimate|
+    #   ratio ≤ 0.20  → reliable;  0.20–0.66 → use with caution;  > 0.66 → unreliable
+    # UI computes moe_ratio on the fly from moe + estimate to save geojson size.
+    rec = derived[tract]
+    for key, moe_val in moes.items():
+        if moe_val is None:
+            continue
+        # Round to a few significant figures based on magnitude to keep file size down
+        if moe_val >= 1000:
+            rec[key + "_moe"] = round(moe_val)
+        elif moe_val >= 10:
+            rec[key + "_moe"] = round(moe_val, 1)
+        else:
+            rec[key + "_moe"] = round(moe_val, 2)
 
 
 # ---------- merge crime counts (if available) ----------

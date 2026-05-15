@@ -167,6 +167,39 @@
     border: 1px solid var(--rule); border-radius: 5px; background: #fff;
   }
 
+  /* Reliability shading toggle */
+  #reliability-toggle {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 10px; padding-top: 8px;
+    border-top: 1px solid var(--rule);
+    font-size: 11.5px; color: var(--ink-2);
+    cursor: pointer; user-select: none;
+  }
+  #reliability-toggle input { margin: 0; }
+
+  /* Tooltip ± MOE display */
+  .tract-tooltip .moe-line {
+    font-size: 11px; color: var(--muted);
+    margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .tract-tooltip .moe-tier {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 8px;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+  .moe-tier.rel { background: #e3f2e0; color: #2a5d24; }
+  .moe-tier.caut { background: #fff4d6; color: #7d6112; }
+  .moe-tier.unr { background: #f7dcd6; color: #8a2a17; }
+
+  /* Detail panel rows with MOE */
+  #detail-panel .det-row .moe { color: var(--muted); font-weight: 400; font-size: 11px; margin-left: 4px; font-variant-numeric: tabular-nums; }
+  #detail-panel .det-row.unr .v { opacity: 0.85; }
+  #detail-panel .det-row.unr::after { content: ''; }
+
   /* Single-var legend */
   #legend { margin-top: 10px; font-size: 11.5px; color: var(--ink-2); }
   #legend .row { display: flex; align-items: center; gap: 8px; margin: 2px 0; }
@@ -420,6 +453,11 @@
         <div id="legend"></div>
       </div>
 
+      <!-- Reliability shading toggle (applies to both single + bivariate) -->
+      <label id="reliability-toggle" title="Fade tracts whose margin of error exceeds 66% of the estimate (Census Bureau's 'unreliable' tier). The data is always shown; this just visually flags uncertainty.">
+        <input type="checkbox" id="show-reliability"> Fade unreliable estimates
+      </label>
+
       <!-- Bivariate legend -->
       <div id="biv-legend" class="hidden"></div>
 
@@ -501,6 +539,24 @@ let VARS = [];
 let GEO = null;
 let RELEASE = null;
 let mode = "single";             // "single" | "bivariate"
+let showReliability = false;     // "fade unreliable estimates" toggle
+
+// Reliability tier from MOE/|estimate| ratio (Census Bureau guidance, 90% CI):
+//   ≤ 0.20 reliable;  0.20–0.66 use with caution;  > 0.66 unreliable.
+const REL_CAUT = 0.20, REL_UNR = 0.66;
+function moeRatio(props, key) {
+  const moe = props[key + "_moe"];
+  const est = props[key];
+  if (moe == null || est == null || !isFinite(moe) || !isFinite(est) || est === 0) return null;
+  return Math.abs(moe) / Math.abs(est);
+}
+function reliabilityTier(props, key) {
+  const r = moeRatio(props, key);
+  if (r == null) return null;
+  if (r <= REL_CAUT) return "rel";
+  if (r <= REL_UNR) return "caut";
+  return "unr";
+}
 // single-var
 let currentKey = "pop_total";
 let scaleMode = "quantile";
@@ -609,12 +665,27 @@ function rebuildBivBins() {
 }
 
 // ===== styling =====
+function fadeFor(props, keys) {
+  // If reliability shading is on AND any tracked variable is "unreliable" tier, fade.
+  if (!showReliability) return false;
+  for (const k of keys) {
+    if (reliabilityTier(props, k) === "unr") return true;
+  }
+  return false;
+}
 function styleSingle(props) {
   const v = props[currentKey];
   if (v == null || !isFinite(v) || !currentScale) {
     return { fillColor: "#dcd9cf", color: "#bdbab0", weight: 0.3, fillOpacity: 0.7 };
   }
-  return { fillColor: currentScale(v), color: "#fff", weight: 0.3, fillOpacity: 0.86 };
+  const fade = fadeFor(props, [currentKey]);
+  return {
+    fillColor: currentScale(v),
+    color: fade ? "#999" : "#fff",
+    weight: 0.3,
+    fillOpacity: fade ? 0.25 : 0.86,
+    dashArray: fade ? "2 2" : null,
+  };
 }
 function styleBiv(props) {
   const bx = binX(props[xKey]);
@@ -622,7 +693,14 @@ function styleBiv(props) {
   if (bx == null || by == null) {
     return { fillColor: "#dcd9cf", color: "#bdbab0", weight: 0.3, fillOpacity: 0.7 };
   }
-  return { fillColor: bivCell(bx, by), color: "#fff", weight: 0.25, fillOpacity: 0.9 };
+  const fade = fadeFor(props, [xKey, yKey]);
+  return {
+    fillColor: bivCell(bx, by),
+    color: fade ? "#999" : "#fff",
+    weight: 0.25,
+    fillOpacity: fade ? 0.3 : 0.9,
+    dashArray: fade ? "2 2" : null,
+  };
 }
 function styleFor(props) { return mode === "single" ? styleSingle(props) : styleBiv(props); }
 function highlightStyle() { return { color: "#111", weight: 1.6, fillOpacity: 0.96 }; }
@@ -630,6 +708,17 @@ function highlightStyle() { return { color: "#111", weight: 1.6, fillOpacity: 0.
 // ===== tooltips =====
 function metaOf(k) { return VARS.find(v => v.key === k); }
 
+function moeBadge(props, key) {
+  const tier = reliabilityTier(props, key);
+  if (!tier) return "";
+  const labels = { rel: "reliable", caut: "use with caution", unr: "unreliable" };
+  return `<span class="moe-tier ${tier}">${labels[tier]}</span>`;
+}
+function moeLine(props, key, meta) {
+  const moe = props[key + "_moe"];
+  if (moe == null) return "";
+  return `<div class="moe-line">± ${fmtValue(moe, meta.fmt)} (90% CI) ${moeBadge(props, key)}</div>`;
+}
 function tooltipHtml(props) {
   if (mode === "single") {
     const meta = metaOf(currentKey);
@@ -640,14 +729,18 @@ function tooltipHtml(props) {
       <div class="ttl">${props.borough || ""} · Tract ${props.ct_label || props.geoid}</div>
       <div class="nta">${props.nta || ""}</div>
       <div><span class="val">${valStr}</span>${units}</div>
+      ${moeLine(props, currentKey, meta)}
     </div>`;
   } else {
     const mx = metaOf(xKey), my = metaOf(yKey);
+    const xMoe = props[xKey + "_moe"], yMoe = props[yKey + "_moe"];
+    const xMoeStr = xMoe != null ? ` <span style="color:var(--muted);font-weight:400;font-size:11px">± ${fmtValue(xMoe, mx.fmt)}</span>` : "";
+    const yMoeStr = yMoe != null ? ` <span style="color:var(--muted);font-weight:400;font-size:11px">± ${fmtValue(yMoe, my.fmt)}</span>` : "";
     return `<div class="tract-tooltip">
       <div class="ttl">${props.borough || ""} · Tract ${props.ct_label || props.geoid}</div>
       <div class="nta">${props.nta || ""}</div>
-      <div class="pair"><span>${mx.label}</span><span class="v">${fmtValue(props[xKey], mx.fmt)}</span></div>
-      <div class="pair"><span>${my.label}</span><span class="v">${fmtValue(props[yKey], my.fmt)}</span></div>
+      <div class="pair"><span>${mx.label}</span><span class="v">${fmtValue(props[xKey], mx.fmt)}${xMoeStr}</span></div>
+      <div class="pair"><span>${my.label}</span><span class="v">${fmtValue(props[yKey], my.fmt)}${yMoeStr}</span></div>
     </div>`;
   }
 }
@@ -665,7 +758,11 @@ function renderDetail(props) {
     groups[g].forEach(v => {
       const val = props[v.key];
       const tail = v.fmt === "pct" || v.fmt === "usd" ? "" : (v.units ? " " + v.units : "");
-      html += `<div class="det-row"><span>${v.label}</span><span class="v">${fmtValue(val, v.fmt)}${tail}</span></div>`;
+      const moe = props[v.key + "_moe"];
+      const moeStr = moe != null ? `<span class="moe">± ${fmtValue(moe, v.fmt)}</span>` : "";
+      const tier = reliabilityTier(props, v.key);
+      const rowCls = tier === "unr" ? " unr" : "";
+      html += `<div class="det-row${rowCls}"><span>${v.label}</span><span class="v">${fmtValue(val, v.fmt)}${tail}${moeStr}</span></div>`;
     });
   });
   document.getElementById("det-body").innerHTML = html;
@@ -914,6 +1011,12 @@ document.querySelectorAll("#scale-toggle button").forEach(b => {
 // mode-toggle handler
 document.querySelectorAll("#mode-toggle button").forEach(b => {
   b.addEventListener("click", () => setMode(b.dataset.mode));
+});
+
+// reliability shading toggle
+document.getElementById("show-reliability").addEventListener("change", e => {
+  showReliability = e.target.checked;
+  if (geoLayer) geoLayer.setStyle(f => styleFor(f.properties));
 });
 
 // ===== map =====
