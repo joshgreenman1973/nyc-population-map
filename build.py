@@ -281,13 +281,13 @@ def derive_one(d, m):
             # Vehicles (B08201 / B25044)
             "pct_no_vehicle":        pct(veh_0,     veh_total),
             "pct_2plus_vehicles":    pct(veh_2plus, veh_total),
-            "avg_vehicles_per_hh":   avg_veh,
-            "pct_owner_no_vehicle":  pct(own_no_v,  own_total),
-            "pct_renter_no_vehicle": pct(rent_no_v, rent_total),
+
+
+
 
             # Schools (B14002 K-12 by public vs. private)
             "pct_kids_public_k12":   pct(k12_public,  k12_total),
-            "pct_kids_private_k12":  pct(k12_private, k12_total),
+
             "k12_students":          int(k12_total) if k12_total else None,
         }
 
@@ -361,11 +361,11 @@ def derive_one(d, m):
             # Vehicles
             "pct_no_vehicle":        moe_pct(veh_0,     get(m,"B08201002"), veh_total,  get(m,"B08201001")),
             "pct_2plus_vehicles":    moe_pct(veh_2plus, moe_sum([get(m,"B08201004"),get(m,"B08201005"),get(m,"B08201006")]), veh_total, get(m,"B08201001")),
-            "pct_owner_no_vehicle":  moe_pct(own_no_v,  get(m,"B25044003"), own_total,  get(m,"B25044002")),
-            "pct_renter_no_vehicle": moe_pct(rent_no_v, get(m,"B25044010"), rent_total, get(m,"B25044009")),
+
+
             # Schools
             "pct_kids_public_k12":   moe_pct(k12_public,  k12_pub_moe, k12_total, k12_tot_moe),
-            "pct_kids_private_k12":  moe_pct(k12_private, k12_pri_moe, k12_total, k12_tot_moe),
+
         }
 
         return rec, moes
@@ -961,8 +961,6 @@ VARS = [
     # --- 9. Schools (K-12) — pairs naturally with Education ---
     ("Schools (K-12)", "pct_kids_public_k12", "K-12 students in public school", "pct", "%",
      "Share of kindergarten-through-12th-grade students enrolled in public school."),
-    ("Schools (K-12)", "pct_kids_private_k12", "K-12 students in private school", "pct", "%",
-     "Share of kindergarten-through-12th-grade students enrolled in private school (Census combines parochial and independent private here)."),
     ("Schools (K-12)", "k12_students", "K-12 students (count, by residence)", "int", "students",
      "Total K-12 students living in the tract (ACS, by student residence)."),
     ("Schools (K-12)", "doe_public_k12_enrolled", "Public-school K-12 enrolled (by school location)", "int", "students",
@@ -987,12 +985,6 @@ VARS = [
      "Share of households that have no vehicle available."),
     ("Vehicles", "pct_2plus_vehicles", "Households with 2+ vehicles", "pct", "%",
      "Share of households with two or more vehicles available."),
-    ("Vehicles", "avg_vehicles_per_hh", "Average vehicles per household", "num2", "vehicles",
-     "Average number of vehicles per household (the \"4 or more\" bucket is counted as 4.5)."),
-    ("Vehicles", "pct_owner_no_vehicle", "Homeowners without a vehicle", "pct", "%",
-     "Share of owner-occupied households that have no vehicle — a distinctively dense-city pattern."),
-    ("Vehicles", "pct_renter_no_vehicle", "Renters without a vehicle", "pct", "%",
-     "Share of renter-occupied households that have no vehicle."),
 
     # --- 12. Elections (NYC BoE) ---
     ("Elections", "pres_2024_d_pct", "Harris vote share, 2024 president", "pct", "%",
