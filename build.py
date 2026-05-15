@@ -122,8 +122,9 @@ for tract, d in all_data.items():
     tenure = get(d, "B25003001")
     pov_total = get(d, "B17001001")
     commute = get(d, "B08301001")
-    lf_total = get(d, "B23025001")
-    lf_in = get(d, "B23025002")
+    lf_total = get(d, "B23025001")       # population 16+
+    lf_in = get(d, "B23025002")           # in labor force (civilian + armed forces)
+    lf_civilian = get(d, "B23025003")     # civilian labor force — the BLS unemployment denominator
     vet_total = get(d, "B21001001")
     snap_total = get(d, "B22010001")
     internet_total = get(d, "B28002001")
@@ -211,7 +212,8 @@ for tract, d in all_data.items():
         "pct_non_english_home": pct(non_english, lang_total),
 
         "pct_in_labor_force": pct(lf_in, lf_total),
-        "pct_unemployed": pct(get(d, "B23025005"), lf_in),
+        # Unemployment rate uses the BLS-canonical denominator: civilian labor force.
+        "pct_unemployed": pct(get(d, "B23025005"), lf_civilian),
         "pct_public_transit": pct(get(d, "B08301010"), commute),
         "pct_walked": pct(get(d, "B08301019"), commute),
         "pct_wfh": pct(get(d, "B08301021"), commute),
@@ -336,7 +338,7 @@ VARS = [
 
     # --- 3. Origin & language ---
     ("Origin & language", "pct_foreign_born", "Foreign-born", "pct", "%",
-     "Share of residents born outside the United States."),
+     "Share of residents born outside the United States, not counting those born abroad to American parents (who Census classifies as native)."),
     ("Origin & language", "pct_non_english_home", "Non-English at home", "pct", "%",
      "Share of residents 5+ who speak a language other than English at home."),
 
@@ -350,9 +352,9 @@ VARS = [
 
     # --- 5. Income & poverty ---
     ("Income & poverty", "median_hh_income", "Median household income", "usd", "$",
-     "Median annual income across all households."),
+     "Median household income in the past 12 months, in 2024 inflation-adjusted dollars (ACS B19013)."),
     ("Income & poverty", "pct_poverty", "Poverty rate", "pct", "%",
-     "Share of residents below the federal poverty line."),
+     "Share of residents below the federal poverty line, among those for whom poverty status was determined (excludes institutional group quarters)."),
     ("Income & poverty", "pct_hh_under30k", "Households under $30k", "pct", "%",
      "Share of households earning less than $30,000."),
     ("Income & poverty", "pct_hh_30_60k", "Households $30k–$60k", "pct", "%",
@@ -368,11 +370,11 @@ VARS = [
 
     # --- 6. Housing ---
     ("Housing", "median_gross_rent", "Median gross rent", "usd", "$/mo",
-     "Median monthly gross rent paid by renters."),
+     "Median monthly gross rent for renter-occupied units paying cash rent (excludes no-cash-rent units)."),
     ("Housing", "median_home_value", "Median home value", "usd", "$",
-     "Median value of owner-occupied homes."),
+     "Median value of owner-occupied housing units, by self-report (ACS B25077)."),
     ("Housing", "median_rent_burden", "Median rent burden", "num1", "%",
-     "Median gross rent as a percentage of household income."),
+     "Median gross rent as a percentage of household income in the past 12 months (ACS B25071)."),
 
     # --- 7. Crime ---
     ("Crime (rolling 12 mo.)", "crime_total_rate", "Major-felony rate", "num1", "per 1,000 residents",
@@ -400,7 +402,7 @@ VARS = [
     ("Work & commute", "pct_in_labor_force", "In labor force (16+)", "pct", "%",
      "Share of residents 16+ in the civilian or armed-forces labor force."),
     ("Work & commute", "pct_unemployed", "Unemployment rate", "pct", "%",
-     "Share of the civilian labor force that is unemployed."),
+     "Share of the civilian labor force (16+) that is unemployed — the standard BLS unemployment-rate definition."),
     ("Work & commute", "pct_public_transit", "Commute by public transit", "pct", "%",
      "Share of commuters using public transportation, excluding taxi."),
     ("Work & commute", "pct_walked", "Walked to work", "pct", "%",
@@ -424,7 +426,7 @@ VARS = [
     ("Other", "pct_veteran", "Veterans (18+)", "pct", "%",
      "Share of civilians 18+ who are veterans."),
     ("Other", "pct_no_internet", "No internet access", "pct", "%",
-     "Share of households without any internet subscription."),
+     "Share of households with no internet access at all — neither a paid subscription nor any other means of getting online (ACS B28002_013)."),
 ]
 
 vars_meta = [
