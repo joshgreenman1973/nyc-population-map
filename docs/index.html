@@ -842,9 +842,7 @@ function bivCell(xb, yb) { return BIV_PALETTE[yb][xb]; }
 
 // ===== ten bivariate presets =====
 const PRESETS = [
-  // Kept presets (10) — each carries a distinct story.
-  { x: "median_hh_income",   y: "crime_property_rate", name: "Income × property crime",
-    story: "Property crime often follows targets, not poverty — cars to break into, packages to grab, laptops to steal. The upper-right is the surprising cell: high-income tracts with high property-crime rates. The upper-left is the more familiar one." },
+  // Kept presets — each carries a distinct story.
   { x: "pct_owner_occupied", y: "pct_over65",          name: "Owner-occupied × 65 and over",
     story: "Older homeowners aging in place cluster in the upper right. The upper left is the more vulnerable picture — older renters." },
   { x: "median_hh_income",   y: "pct_public_transit",  name: "Income × transit commute",
