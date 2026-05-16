@@ -1069,7 +1069,9 @@ function renderBivLegend() {
   let grid = '<table class="swatches"><tbody>';
   for (let y = 2; y >= 0; y--) {
     grid += '<tr>';
-    for (let x = 0; x < 3; x++) grid += `<td style="background:${bivCell(x,y)}"></td>`;
+    for (let x = 0; x < 3; x++) {
+      grid += `<td class="biv-cell" data-bx="${x}" data-by="${y}" style="background:${bivCell(x,y)};cursor:pointer"></td>`;
+    }
     grid += '</tr>';
   }
   grid += '</tbody></table>';
@@ -1093,6 +1095,50 @@ function renderBivLegend() {
     </div>
     <div class="ml-xrow"><div class="ml-xrange"><span>${xlo}</span><span>${xhi}</span></div></div>
     <div class="ml-xcap">→ <b>${mx.label}</b></div>`;
+
+  // Attach brushing handlers to every cell in BOTH legends. Hovering a 3×3 cell
+  // dims all tracts not in that bin pair; mouseout restores the full styling.
+  document.querySelectorAll(".biv-cell").forEach(td => {
+    td.addEventListener("mouseenter", () => {
+      const bx = +td.dataset.bx, by = +td.dataset.by;
+      brushBivariate(bx, by);
+      // Mirror highlight on both legends — outline the active cell
+      document.querySelectorAll(".biv-cell").forEach(c => {
+        const match = +c.dataset.bx === bx && +c.dataset.by === by;
+        c.style.outline = match ? "2px solid #111" : "";
+        c.style.outlineOffset = match ? "-2px" : "";
+      });
+    });
+    td.addEventListener("mouseleave", () => {
+      brushBivariate(null, null);
+      document.querySelectorAll(".biv-cell").forEach(c => { c.style.outline = ""; });
+    });
+  });
+}
+
+// Brushing: when (bx, by) given, dim every tract not in that bin pair.
+// Pass (null, null) to clear and restore normal styles.
+function brushBivariate(bx, by) {
+  if (!geoLayer) return;
+  if (bx == null) {
+    geoLayer.setStyle(f => styleFor(f.properties));
+    return;
+  }
+  geoLayer.eachLayer(layer => {
+    const p = layer.feature.properties;
+    const px = binX(p[xKey]);
+    const py = binY(p[yKey]);
+    if (px === bx && py === by) {
+      // Matched cell — pop with full opacity and a thin black outline
+      layer.setStyle({ fillColor: bivCell(bx, by), color: "#111", weight: 1.0, fillOpacity: 0.95, dashArray: null });
+    } else if (px == null || py == null) {
+      // Missing data — keep faded
+      layer.setStyle({ fillColor: "#dcd9cf", color: "#bdbab0", weight: 0.2, fillOpacity: 0.25, dashArray: null });
+    } else {
+      // Out of selected cell — heavily dimmed
+      layer.setStyle({ fillColor: bivCell(px, py), color: "#fff", weight: 0.15, fillOpacity: 0.18, dashArray: null });
+    }
+  });
 }
 
 // ===== single-var picker =====
