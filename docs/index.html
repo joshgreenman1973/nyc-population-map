@@ -842,20 +842,13 @@ function bivCell(xb, yb) { return BIV_PALETTE[yb][xb]; }
 
 // ===== ten bivariate presets =====
 const PRESETS = [
-  { x: "median_hh_income",   y: "pct_hispanic",        name: "Income × Hispanic share",
-    story: "The diagonal corners show where the wealth–ethnicity overlap is starkest: lower-income tracts that are heavily Hispanic, versus higher-income tracts that are not." },
-  { x: "pct_bachelor_plus",  y: "median_gross_rent",   name: "Education × rent",
-    story: "Where the college-degree premium has been capitalized into rents — and the rare tracts where one is high but the other isn't." },
+  // Kept presets (10) — each carries a distinct story.
   { x: "median_hh_income",   y: "crime_property_rate", name: "Income × property crime",
     story: "Property crime often follows targets, not poverty — cars to break into, packages to grab, laptops to steal. The upper-right is the surprising cell: high-income tracts with high property-crime rates. The upper-left is the more familiar one." },
-  { x: "pct_poverty",        y: "pct_under18",         name: "Poverty × kids",
-    story: "The top-right corner is the child-poverty geography of New York City: tracts where poverty rates and the share of children are both high." },
   { x: "pct_owner_occupied", y: "pct_over65",          name: "Owner-occupied × 65 and over",
     story: "Older homeowners aging in place cluster in the upper right. The upper left is the more vulnerable picture — older renters." },
   { x: "median_hh_income",   y: "pct_public_transit",  name: "Income × transit commute",
     story: "Transit-rich-and-rich (Manhattan core) shows up in the upper right; transit-dependent low income in the upper left; the lower-right is car-leaning higher-income outer borough." },
-  { x: "pct_bachelor_plus",  y: "pct_wfh",             name: "Education × work-from-home",
-    story: "The laptop-class geography. The upper-right tracts are where a degree and a home office overlap; the lower-right are college-degreed but back at the office." },
   { x: "pct_foreign_born",   y: "pct_poverty",         name: "Foreign-born × poverty",
     story: "Challenges two clichés at once. The upper-right (high foreign-born, high poverty) is the stereotype; the lower-right (high foreign-born, low poverty) is the wealthy immigrant enclave that the stereotype misses; the upper-left is U.S.-born poverty, often the deepest." },
   { x: "pct_bachelor_plus",  y: "pct_under18",         name: "Education × kids",
@@ -870,8 +863,19 @@ const PRESETS = [
     story: "Did college-educated areas hold for Democrats while less-educated tracts swung Trump? The cells tell you. Y values near zero are tracts that didn't shift. Strongly negative Y = Trump gain; positive Y = Democratic gain. The diagonal answers the diploma-divide question for NYC." },
   { x: "pct_foreign_born",   y: "pres_d_shift_2020_2024", name: "Foreign-born × D shift, 2020→2024",
     story: "Immigrant tracts famously moved toward Trump from 2020 to 2024. This shows where. Top half = D gain (rare); bottom half = R gain. The right column is high-foreign-born tracts — if the lower-right is the densest, immigrant neighborhoods shifted hardest." },
-  { x: "median_hh_income",   y: "pct_no_vehicle",      name: "Income × no-car households",
-    story: "In most American cities car ownership rises with income. New York inverts that. The upper-right cell is the New York anomaly — high-income tracts where the majority of households have no car. The lower-right is the more national-feeling pattern: higher income, more vehicles." },
+
+  // New presets (5) — expand coverage into housing stress, safety net, rent
+  // regulation, within-tract inequality, and 2025 mayoral politics.
+  { x: "median_hh_income",   y: "median_rent_burden",  name: "Income × rent burden",
+    story: "The real housing-stress map. The upper-left is the worst-off: high rent burden in low-income tracts. The upper-right is the 'house-rich-but-cash-stretched' cell — high incomes where rent still eats a large share. The lower-right is the comfortable corner; the lower-left is the cheap-rent-for-low-incomes pocket." },
+  { x: "pct_poverty",        y: "pct_snap",            name: "Poverty × SNAP receipt",
+    story: "Where the safety net actually reaches poverty. The diagonal (high SNAP plus high poverty) is the standard pattern. The lower-right is the gap: high poverty but low SNAP uptake — often immigrant-heavy tracts where eligibility is restricted or public-charge fears suppress enrollment. The upper-left is high SNAP relative to poverty, typically senior-heavy tracts." },
+  { x: "median_gross_rent",  y: "rs_share_of_renters", name: "Market rent × rent-stabilized share",
+    story: "Does rent stabilization track with cheap or expensive neighborhoods? The upper-left would mean yes — high stabilization where market rents are low (most of the Bronx, northern Manhattan). The upper-right is the contradiction: stabilized buildings still in expensive tracts (Stuy Town, prewar Upper West/East Side). The lower-right is the unregulated luxury map." },
+  { x: "pct_hh_under30k",    y: "pct_hh_200kplus",     name: "Bottom-bracket × top-bracket",
+    story: "Within-tract inequality. The upper-right is the gentrification signature — neighborhoods with both significant sub-$30k and $200k+ households living side by side (parts of Bed-Stuy, Bushwick edges, Crown Heights, Harlem). The upper-left is homogeneously poor; the lower-right is homogeneously affluent; the lower-left is the middle-class middle." },
+  { x: "pct_foreign_born",   y: "mayor_2025_mamdani_pct", name: "Foreign-born × Mamdani 2025",
+    story: "Mamdani's 2025 coalition mapped against immigrant geography. The upper-right is the immigrant-Mamdani overlap; the upper-left is the native-born-Mamdani coalition (young transplant Brooklyn, parts of Manhattan). The diagonal — whether his support concentrates among foreign-born NYers or among U.S.-born young liberals — defined a debate of the race." },
 ];
 
 // ===== single-variable color scale =====
