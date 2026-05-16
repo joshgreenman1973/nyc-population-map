@@ -330,6 +330,47 @@
 
   .hidden { display: none !important; }
 
+  /* ----- Onboarding card ----- */
+  #onboarding-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 2000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  #onboarding-overlay.hidden { display: none; }
+  #onboarding-card {
+    background: var(--panel);
+    max-width: 460px;
+    border-radius: 10px;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.3);
+    padding: 28px 30px 22px;
+    font-family: var(--sans);
+    color: var(--ink);
+  }
+  #onboarding-card h2 {
+    margin: 0 0 12px;
+    font-size: 21px;
+    letter-spacing: -0.01em;
+  }
+  #onboarding-card p { font-size: 14px; line-height: 1.55; color: var(--ink-2); margin: 0 0 10px; }
+  #onboarding-card p b { color: var(--ink); }
+  #onboarding-card .ob-tips { margin: 12px 0 18px; padding-left: 18px; font-size: 13.5px; line-height: 1.6; color: var(--ink-2); }
+  #onboarding-card .ob-tips li { margin-bottom: 4px; }
+  #onboarding-card .ob-tips li b { color: var(--ink); }
+  #onboarding-card .ob-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 8px;
+  }
+  #onboarding-card .ob-footer button {
+    background: var(--ink); color: #fff; border: 0;
+    padding: 8px 18px; font: inherit; font-size: 13.5px; font-weight: 500;
+    border-radius: 6px; cursor: pointer;
+  }
+  #onboarding-card .ob-footer button:hover { background: #000; }
+  #onboarding-card .ob-footer .ob-skip { color: var(--muted); font-size: 12px; cursor: pointer; }
+  #onboarding-card .ob-footer .ob-skip:hover { color: var(--ink-2); }
+
   /* Floating address search */
   #search-box {
     position: absolute;
@@ -444,6 +485,44 @@
   #single-map-legend .grad-bar { flex: 1; height: 12px; border-radius: 2px; }
   @media (max-width: 860px) { #single-map-legend { right: 8px; bottom: 8px; max-width: 220px; padding: 10px 12px; } }
 
+  /* Linked scatterplot (bivariate mode only) */
+  #scatter-panel {
+    position: absolute;
+    left: 14px;
+    bottom: 14px;
+    z-index: 900;
+    width: 290px;
+    background: rgba(255,255,255,0.97);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 10px 12px 8px;
+    box-shadow: var(--shadow);
+    font-family: var(--sans);
+  }
+  #scatter-panel.hidden { display: none; }
+  #scatter-panel .sp-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 11.5px; color: var(--ink-2); margin-bottom: 4px;
+  }
+  #scatter-panel .sp-head .sp-title { font-weight: 600; color: var(--ink); font-size: 12px; }
+  #scatter-panel .sp-toggle {
+    background: transparent; border: 0; color: var(--muted); cursor: pointer;
+    font: inherit; font-size: 14px; line-height: 1; padding: 0 4px;
+  }
+  #scatter-panel .sp-toggle:hover { color: var(--ink); }
+  #scatter-svg { display: block; }
+  #scatter-svg .sp-axis line, #scatter-svg .sp-axis path { stroke: var(--rule); shape-rendering: crispEdges; }
+  #scatter-svg .sp-axis text { fill: var(--muted); font-size: 9.5px; }
+  #scatter-svg .sp-axis-label { fill: var(--ink-2); font-size: 10px; }
+  #scatter-svg .sp-dot { stroke: rgba(0,0,0,0.15); stroke-width: 0.4; cursor: pointer; }
+  #scatter-svg .sp-dot.sp-active { stroke: #111; stroke-width: 1.8; }
+  #scatter-svg .sp-dot.sp-hover { stroke: #111; stroke-width: 1.6; }
+  #scatter-panel.collapsed #scatter-svg, #scatter-panel.collapsed .sp-foot { display: none; }
+  #scatter-panel .sp-foot { font-size: 10.5px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+  @media (max-width: 860px) {
+    #scatter-panel { left: 8px; bottom: 8px; width: 230px; padding: 8px 10px; }
+  }
+
   /* Floating bivariate legend over the map */
   #biv-map-legend {
     position: absolute;
@@ -517,6 +596,23 @@
 </style>
 </head>
 <body>
+<div id="onboarding-overlay" class="hidden">
+  <div id="onboarding-card" role="dialog" aria-labelledby="ob-title">
+    <h2 id="ob-title">New York City, by neighborhood</h2>
+    <p>This is every neighborhood (NTA) in the five boroughs, colored by whatever variable you pick from the list on the left — population, race, income, rent, crime, school enrollment, election results, and more.</p>
+    <ul class="ob-tips">
+      <li><b>Pick a variable</b> in the sidebar. The map and the citywide stats update live.</li>
+      <li><b>Switch to "Two variables"</b> to color by two metrics at once on a 3×3 grid. Hover a legend cell to highlight only the neighborhoods in that bin.</li>
+      <li><b>Search any NYC address</b> at the top of the map to find the containing tract or neighborhood.</li>
+      <li>Use <b>Tract / Neighborhood</b> to zoom in to census tracts when the bigger geography hides what you want.</li>
+    </ul>
+    <p style="font-size:12.5px;color:var(--muted);margin-top:14px;">All numbers come with caveats — see the methodology link in the footer for sources, margins of error, and the data behind the rent-stabilized counts.</p>
+    <div class="ob-footer">
+      <span class="ob-skip" id="ob-skip">Don't show again</span>
+      <button id="ob-start">Start exploring</button>
+    </div>
+  </div>
+</div>
 <div id="app">
   <aside id="sidebar">
     <h1>New York City population explorer</h1>
@@ -609,6 +705,14 @@
     </div>
     <div id="single-map-legend"></div>
     <div id="biv-map-legend" class="hidden"></div>
+    <div id="scatter-panel" class="hidden">
+      <div class="sp-head">
+        <span class="sp-title">Scatterplot</span>
+        <button class="sp-toggle" id="sp-toggle" title="Collapse">–</button>
+      </div>
+      <svg id="scatter-svg" width="266" height="200"></svg>
+      <div class="sp-foot">Each dot is a neighborhood. Hover to highlight on the map; hover a tract on the map to find it here.</div>
+    </div>
     <div id="search-box">
       <svg id="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
       <input id="search-input" type="text" placeholder="Search a NYC address or place…" autocomplete="off" spellcheck="false">
@@ -1260,6 +1364,7 @@ function setMode(m) {
   document.getElementById("biv-story").classList.toggle("hidden", single);
   document.getElementById("biv-map-legend").classList.toggle("hidden", single);
   document.getElementById("single-map-legend").classList.toggle("hidden", !single);
+  document.getElementById("scatter-panel").classList.toggle("hidden", single);
   if (!single) document.getElementById("detail-panel").classList.remove("open");
   applyCurrent();
 }
@@ -1297,6 +1402,7 @@ function applyCurrent() {
     document.getElementById("biv-story").textContent = currentStory ||
       "Each axis is split into thirds across all NYC tracts. The 3×3 cell tells you where this tract falls on both variables at once.";
     renderBivLegend();
+    renderScatter();
   }
   renderCitySummary();
   if (geoLayer) geoLayer.setStyle(f => styleFor(f.properties));
@@ -1358,9 +1464,13 @@ function attachGeoLayer() {
     onEachFeature: (feat, layer) => {
       layer.bindTooltip(() => tooltipHtml(feat.properties),
         { sticky: true, className: "tract-tip-wrap", direction: "auto", opacity: 1 });
-      layer.on("mouseover", () => layer.setStyle(highlightStyle()));
+      layer.on("mouseover", () => {
+        layer.setStyle(highlightStyle());
+        if (mode === "bivariate") highlightScatterDot(feat.properties.geoid);
+      });
       layer.on("mouseout", () => {
         if (feat.properties.geoid !== selectedGeoid) geoLayer.resetStyle(layer);
+        if (mode === "bivariate") highlightScatterDot(null);
       });
       layer.on("click", () => {
         if (mode !== "single") return;
@@ -1534,6 +1644,182 @@ document.addEventListener("click", e => {
     searchResults.classList.remove("open");
   }
 });
+
+// ===== linked scatterplot (bivariate mode only) =====
+const SP_W = 266, SP_H = 200;
+const SP_PAD = { top: 6, right: 8, bottom: 24, left: 36 };
+let spScales = null;            // {x, y} d3 scales from current data
+let spGeoidByDot = new Map();   // geoid → SVG circle node, for map→scatter highlight
+let spDotsByGeoid = new Map();
+let spActiveGeoid = null;
+
+function renderScatter() {
+  const svg = document.getElementById("scatter-svg");
+  if (!svg) return;
+  svg.innerHTML = "";
+  spGeoidByDot.clear();
+  spDotsByGeoid.clear();
+  const mx = metaOf(xKey), my = metaOf(yKey);
+  // Build pairs
+  const pts = [];
+  for (const f of GEO.features) {
+    const p = f.properties;
+    const x = p[xKey], y = p[yKey];
+    if (x == null || !isFinite(x) || y == null || !isFinite(y)) continue;
+    pts.push({ x, y, geoid: p.geoid, props: p });
+  }
+  if (!pts.length) return;
+  const xExt = d3.extent(pts, d => d.x);
+  const yExt = d3.extent(pts, d => d.y);
+  const xS = d3.scaleLinear().domain(xExt).nice().range([SP_PAD.left, SP_W - SP_PAD.right]);
+  const yS = d3.scaleLinear().domain(yExt).nice().range([SP_H - SP_PAD.bottom, SP_PAD.top]);
+  spScales = { x: xS, y: yS };
+  const NS = "http://www.w3.org/2000/svg";
+  // Axes — simple ticks
+  function addAxis(orient, ticks, labelText) {
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "sp-axis");
+    for (const t of ticks) {
+      const tk = document.createElementNS(NS, "text");
+      if (orient === "x") {
+        tk.setAttribute("x", xS(t)); tk.setAttribute("y", SP_H - SP_PAD.bottom + 12);
+        tk.setAttribute("text-anchor", "middle");
+      } else {
+        tk.setAttribute("x", SP_PAD.left - 4); tk.setAttribute("y", yS(t) + 3);
+        tk.setAttribute("text-anchor", "end");
+      }
+      tk.textContent = fmtTickShort(t, orient === "x" ? mx.fmt : my.fmt);
+      g.appendChild(tk);
+    }
+    // Label
+    const lbl = document.createElementNS(NS, "text");
+    lbl.setAttribute("class", "sp-axis-label");
+    if (orient === "x") {
+      lbl.setAttribute("x", (SP_PAD.left + SP_W - SP_PAD.right) / 2);
+      lbl.setAttribute("y", SP_H - 4);
+      lbl.setAttribute("text-anchor", "middle");
+    } else {
+      lbl.setAttribute("transform", `translate(10,${(SP_PAD.top + SP_H - SP_PAD.bottom) / 2}) rotate(-90)`);
+      lbl.setAttribute("text-anchor", "middle");
+    }
+    lbl.textContent = labelText;
+    g.appendChild(lbl);
+    svg.appendChild(g);
+  }
+  addAxis("x", xS.ticks(4), mx.label);
+  addAxis("y", yS.ticks(4), my.label);
+  // Plot frame
+  const frame = document.createElementNS(NS, "rect");
+  frame.setAttribute("x", SP_PAD.left); frame.setAttribute("y", SP_PAD.top);
+  frame.setAttribute("width", SP_W - SP_PAD.right - SP_PAD.left);
+  frame.setAttribute("height", SP_H - SP_PAD.bottom - SP_PAD.top);
+  frame.setAttribute("fill", "none"); frame.setAttribute("stroke", "rgba(0,0,0,0.08)");
+  svg.appendChild(frame);
+  // Dots — color by bivariate cell (same palette as the map)
+  for (const pt of pts) {
+    const bx = binX(pt.x), by = binY(pt.y);
+    const c = (bx != null && by != null) ? bivCell(bx, by) : "#dcd9cf";
+    const dot = document.createElementNS(NS, "circle");
+    dot.setAttribute("class", "sp-dot");
+    dot.setAttribute("cx", xS(pt.x));
+    dot.setAttribute("cy", yS(pt.y));
+    dot.setAttribute("r", geoLevel === "nta" ? 3.2 : 1.8);
+    dot.setAttribute("fill", c);
+    dot.setAttribute("fill-opacity", "0.85");
+    dot.dataset.geoid = pt.geoid;
+    // Hover: highlight the matching tract on the map
+    dot.addEventListener("mouseenter", () => spHover(pt.geoid));
+    dot.addEventListener("mouseleave", () => spHover(null));
+    dot.addEventListener("click", () => spClick(pt));
+    svg.appendChild(dot);
+    spDotsByGeoid.set(pt.geoid, dot);
+  }
+}
+
+function fmtTickShort(v, fmt) {
+  if (v == null) return "";
+  if (fmt === "usd") {
+    if (v >= 1000) return "$" + Math.round(v / 1000) + "k";
+    return "$" + Math.round(v);
+  }
+  if (fmt === "pct") return Math.round(v) + "%";
+  if (Math.abs(v) >= 1000) return d3.format(",")(Math.round(v));
+  if (Math.abs(v) >= 10) return d3.format(",.0f")(v);
+  return d3.format(".1f")(v);
+}
+
+// Map → scatter: when a tract layer is hovered on the map, highlight its dot
+function highlightScatterDot(geoid) {
+  if (spActiveGeoid && spDotsByGeoid.has(spActiveGeoid)) {
+    spDotsByGeoid.get(spActiveGeoid).classList.remove("sp-hover");
+  }
+  spActiveGeoid = geoid;
+  if (geoid && spDotsByGeoid.has(geoid)) {
+    const d = spDotsByGeoid.get(geoid);
+    d.classList.add("sp-hover");
+    // Bring to top
+    d.parentNode.appendChild(d);
+  }
+}
+
+// Scatter → map: hover a dot, brush the matching tract polygon
+function spHover(geoid) {
+  if (!geoLayer) return;
+  if (geoid == null) {
+    geoLayer.setStyle(f => styleFor(f.properties));
+    return;
+  }
+  geoLayer.eachLayer(l => {
+    if (l.feature.properties.geoid === geoid) {
+      l.setStyle({ color: "#111", weight: 2.2, fillOpacity: 0.95 });
+      l.bringToFront();
+    } else {
+      const p = l.feature.properties;
+      const px = binX(p[xKey]), py = binY(p[yKey]);
+      if (px != null && py != null) {
+        l.setStyle({ fillColor: bivCell(px, py), color: "#fff", weight: 0.15, fillOpacity: 0.22, dashArray: null });
+      } else {
+        l.setStyle({ fillColor: "#dcd9cf", color: "#bdbab0", weight: 0.2, fillOpacity: 0.25, dashArray: null });
+      }
+    }
+  });
+}
+
+// Click a dot: pan map to that tract
+function spClick(pt) {
+  if (!geoLayer || !map) return;
+  geoLayer.eachLayer(l => {
+    if (l.feature.properties.geoid === pt.geoid) {
+      map.flyToBounds(l.getBounds(), { duration: 0.6, padding: [40, 40] });
+    }
+  });
+}
+
+// Toggle expand/collapse
+document.getElementById("sp-toggle").addEventListener("click", () => {
+  const panel = document.getElementById("scatter-panel");
+  panel.classList.toggle("collapsed");
+  document.getElementById("sp-toggle").textContent = panel.classList.contains("collapsed") ? "+" : "–";
+});
+
+// ===== onboarding card =====
+const OB_KEY = "nycpop_onboarded_v1";
+function showOnboarding() { document.getElementById("onboarding-overlay").classList.remove("hidden"); }
+function hideOnboarding(remember) {
+  document.getElementById("onboarding-overlay").classList.add("hidden");
+  if (remember) {
+    try { localStorage.setItem(OB_KEY, "1"); } catch (_) {}
+  }
+}
+document.getElementById("ob-start").addEventListener("click", () => hideOnboarding(true));
+document.getElementById("ob-skip").addEventListener("click", () => hideOnboarding(true));
+document.getElementById("onboarding-overlay").addEventListener("click", e => {
+  if (e.target.id === "onboarding-overlay") hideOnboarding(true);
+});
+// Show on first visit (unless URL has a hash, in which case the user is opening a shared view)
+try {
+  if (!localStorage.getItem(OB_KEY) && !location.hash) showOnboarding();
+} catch (_) {}
 
 // ===== borough quick-zoom =====
 const BOROUGH_VIEWS = {
