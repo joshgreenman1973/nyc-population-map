@@ -26,7 +26,39 @@
   #app { display: grid; grid-template-columns: 360px 1fr; height: 100vh; }
   @media (max-width: 860px) {
     #app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-    #sidebar { max-height: 55vh; overflow-y: auto; }
+    #sidebar { max-height: 50vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  }
+  /* Tighter rules for true phone-size screens. */
+  @media (max-width: 560px) {
+    html, body { height: -webkit-fill-available; }
+    #app { height: 100dvh; height: -webkit-fill-available; }
+    #sidebar { max-height: 45vh; padding: 12px 14px 16px; }
+    #sidebar h1 { font-size: 17px; }
+    #sidebar .sub { font-size: 12px; margin-bottom: 10px; }
+    /* Bigger touch targets in the variable list */
+    .var-btn { padding: 9px 8px; font-size: 14px; }
+    .preset { padding: 10px 12px; margin: 6px 0; }
+    /* Compact the meta card */
+    .meta-card { padding: 10px 12px; }
+    .meta-card h2 { font-size: 13.5px; }
+    .meta-card .desc { font-size: 12px; }
+    /* Hide the on-map floating legends — sidebar legend already covers it,
+       and these overlap with map content on small screens. */
+    #single-map-legend, #biv-map-legend { display: none !important; }
+    /* The scatterplot panel is too small to be useful on a phone — hide */
+    #scatter-panel { display: none !important; }
+    /* Borough zoom: hide on very small screens (pan + zoom + search do the job) */
+    #borough-zoom { display: none; }
+    /* Search box: full width minus the zoom-control gutter on the right */
+    #search-box { width: calc(100% - 60px); top: 8px; left: 8px; }
+    /* Detail panel slides up as a bottom sheet */
+    #detail-panel { left: 8px; right: 8px; top: auto; bottom: 8px; width: auto; max-height: 50vh; padding: 12px 14px; }
+    /* Footer: smaller, two-line layout */
+    #footer { font-size: 10.5px; }
+    /* Onboarding card: tighter padding for narrow viewports */
+    #onboarding-card { padding: 22px 22px 18px; }
+    #onboarding-card h2 { font-size: 18px; }
+    #onboarding-card p, #onboarding-card .ob-tips { font-size: 13px; }
   }
   #sidebar {
     background: var(--panel);
