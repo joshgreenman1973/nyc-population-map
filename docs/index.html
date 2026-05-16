@@ -192,6 +192,29 @@
   }
   #reliability-toggle input { margin: 0; }
 
+  /* Citywide summary card */
+  #city-summary {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--rule);
+    font-size: 11.5px;
+    color: var(--ink-2);
+  }
+  #city-summary.hidden { display: none; }
+  #city-summary .cs-row {
+    display: flex; justify-content: space-between;
+    padding: 2px 0;
+    font-variant-numeric: tabular-nums;
+  }
+  #city-summary .cs-label { color: var(--muted); }
+  #city-summary .cs-value { color: var(--ink); font-weight: 500; }
+  #city-summary .cs-corr {
+    margin-top: 4px;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  #city-summary .cs-corr-strength { color: var(--ink-2); font-weight: 400; font-size: 10.5px; margin-left: 4px; }
+
   /* Tooltip ± MOE display */
   .tract-tooltip .moe-line {
     font-size: 11px; color: var(--muted);
@@ -370,6 +393,32 @@
     padding: 8px 12px; font-size: 12px; color: var(--muted);
   }
 
+  /* Borough quick-zoom strip */
+  #borough-zoom {
+    position: absolute;
+    top: 14px;
+    right: 60px;
+    z-index: 900;
+    display: flex;
+    gap: 4px;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 4px;
+    box-shadow: var(--shadow);
+    font-family: var(--sans);
+  }
+  #borough-zoom button {
+    background: transparent; border: 0; padding: 4px 8px;
+    font: inherit; font-size: 11.5px;
+    color: var(--ink-2); cursor: pointer; border-radius: 4px;
+  }
+  #borough-zoom button:hover { background: var(--paper); color: var(--ink); }
+  @media (max-width: 860px) {
+    #borough-zoom { font-size: 10px; right: 50px; top: 10px; padding: 2px; }
+    #borough-zoom button { padding: 3px 5px; font-size: 10px; }
+  }
+
   /* Floating single-variable legend over the map */
   #single-map-legend {
     position: absolute;
@@ -504,6 +553,9 @@
         <input type="checkbox" id="show-reliability"> Fade unreliable estimates
       </label>
 
+      <!-- Citywide summary (single-var only) / Bivariate correlation (bivariate only) -->
+      <div id="city-summary"></div>
+
       <!-- Bivariate legend -->
       <div id="biv-legend" class="hidden"></div>
 
@@ -537,11 +589,24 @@
     </div>
 
     <div id="footer">
-      Data: <a href="https://api.censusreporter.org" target="_blank" rel="noopener">Census Reporter</a> mirror of the U.S. Census Bureau American Community Survey 5-year (<span id="release-name">2020–2024</span>). Crime rates from <a href="https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Historic/qgea-i56i" target="_blank" rel="noopener">NYPD complaint data</a>, rolling 12 months ending <span id="crime-window-end">—</span>. Tract geometry from <a href="https://www.nyc.gov/site/planning/data-maps/open-data.page" target="_blank" rel="noopener">NYC DCP</a>, shoreline-clipped 2020 vintage. Missing values shown in gray. See <a href="methodology.html">methodology</a>.
+      Data: <a href="https://api.censusreporter.org" target="_blank" rel="noopener">Census Reporter</a> mirror of the U.S. Census Bureau American Community Survey 5-year (<span id="release-name">2020–2024</span>). Crime rates from <a href="https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Historic/qgea-i56i" target="_blank" rel="noopener">NYPD complaint data</a>, rolling 12 months ending <span id="crime-window-end">—</span>. Tract geometry from <a href="https://www.nyc.gov/site/planning/data-maps/open-data.page" target="_blank" rel="noopener">NYC DCP</a>, shoreline-clipped 2020 vintage. Missing values shown in gray.
+      <div style="margin-top:8px">
+        <a href="methodology.html">Methodology</a> ·
+        <a href="https://github.com/joshgreenman1973/nyc-population-map" target="_blank" rel="noopener">Source</a> ·
+        <a href="#" id="export-csv">Download CSV of current view</a>
+      </div>
     </div>
   </aside>
   <main style="position:relative;">
     <div id="map"></div>
+    <div id="borough-zoom">
+      <button data-zoom="all">All NYC</button>
+      <button data-zoom="bx">Bronx</button>
+      <button data-zoom="bk">Brooklyn</button>
+      <button data-zoom="mn">Manhattan</button>
+      <button data-zoom="qn">Queens</button>
+      <button data-zoom="si">Staten Is.</button>
+    </div>
     <div id="single-map-legend"></div>
     <div id="biv-map-legend" class="hidden"></div>
     <div id="search-box">
@@ -795,9 +860,87 @@ function moeBadge(props, key) {
   return `<span class="moe-tier ${tier}">${labels[tier]}</span>`;
 }
 function moeLine(props, key, meta) {
+  const val = props[key];
   const moe = props[key + "_moe"];
-  if (moe == null) return "";
+  // Suppress nonsense MOEs: only show when both estimate and MOE are real numbers AND
+  // the estimate isn't zero/null (a 100% MOE on a 0 value is meaningless).
+  if (moe == null || val == null || !isFinite(val) || val === 0) return "";
   return `<div class="moe-line">± ${fmtValue(moe, meta.fmt)} (90% CI) ${moeBadge(props, key)}</div>`;
+}
+
+// Percentile of this tract among all tracts/NTAs with data for the given variable.
+function percentileFor(val, key) {
+  if (val == null || !isFinite(val) || !GEO) return null;
+  const vals = GEO.features.map(f => f.properties[key]).filter(v => v != null && isFinite(v));
+  if (!vals.length) return null;
+  let below = 0;
+  for (const v of vals) if (v < val) below++;
+  return Math.round(100 * below / vals.length);
+}
+function pctileLine(props, key) {
+  const v = props[key];
+  const p = percentileFor(v, key);
+  if (p == null) return "";
+  const unit = (geoLevel === "nta") ? "NTAs" : "tracts";
+  return `<div class="moe-line">Higher than ${p}% of ${unit}</div>`;
+}
+
+// Pearson correlation for two variables across all features (tracts/NTAs).
+function pearsonCorr(xKey, yKey) {
+  if (!GEO) return null;
+  const pairs = [];
+  for (const f of GEO.features) {
+    const x = f.properties[xKey], y = f.properties[yKey];
+    if (x != null && isFinite(x) && y != null && isFinite(y)) pairs.push([x, y]);
+  }
+  if (pairs.length < 10) return null;
+  const n = pairs.length;
+  const mx = pairs.reduce((s, p) => s + p[0], 0) / n;
+  const my = pairs.reduce((s, p) => s + p[1], 0) / n;
+  let num = 0, dx2 = 0, dy2 = 0;
+  for (const [x, y] of pairs) {
+    const a = x - mx, b = y - my;
+    num += a * b; dx2 += a * a; dy2 += b * b;
+  }
+  if (dx2 === 0 || dy2 === 0) return null;
+  return { r: num / Math.sqrt(dx2 * dy2), n };
+}
+function corrStrengthLabel(r) {
+  const a = Math.abs(r);
+  if (a < 0.1) return "essentially none";
+  if (a < 0.3) return "weak";
+  if (a < 0.5) return "moderate";
+  if (a < 0.7) return "strong";
+  return "very strong";
+}
+
+// City summary panel
+function renderCitySummary() {
+  const el = document.getElementById("city-summary");
+  if (!el || !GEO) return;
+  if (mode === "single") {
+    const meta = metaOf(currentKey);
+    const vals = GEO.features.map(f => f.properties[currentKey]).filter(v => v != null && isFinite(v));
+    if (!vals.length) { el.innerHTML = ""; return; }
+    const sorted = vals.slice().sort(d3.ascending);
+    const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
+    const median = d3.quantileSorted(sorted, 0.5);
+    const lo = sorted[0], hi = sorted[sorted.length - 1];
+    const unit = (geoLevel === "nta") ? "NTAs" : "tracts";
+    el.innerHTML = `
+      <div class="cs-row"><span class="cs-label">${unit} with data</span><span class="cs-value">${vals.length.toLocaleString()}</span></div>
+      <div class="cs-row"><span class="cs-label">Min</span><span class="cs-value">${fmtValue(lo, meta.fmt)}</span></div>
+      <div class="cs-row"><span class="cs-label">Median</span><span class="cs-value">${fmtValue(median, meta.fmt)}</span></div>
+      <div class="cs-row"><span class="cs-label">Mean</span><span class="cs-value">${fmtValue(mean, meta.fmt)}</span></div>
+      <div class="cs-row"><span class="cs-label">Max</span><span class="cs-value">${fmtValue(hi, meta.fmt)}</span></div>`;
+  } else {
+    const c = pearsonCorr(xKey, yKey);
+    if (!c) { el.innerHTML = ""; return; }
+    const sign = c.r >= 0 ? "+" : "−";
+    el.innerHTML = `
+      <div class="cs-corr">Correlation: ${sign}${Math.abs(c.r).toFixed(2)}
+        <span class="cs-corr-strength">(${corrStrengthLabel(c.r)}, n = ${c.n.toLocaleString()})</span></div>`;
+  }
 }
 function crimeCaveat(props, key) {
   // Only relevant when the active variable is a crime-rate variable.
@@ -823,6 +966,7 @@ function tooltipHtml(props) {
       <div class="nta">${sub}</div>
       <div><span class="val">${valStr}</span>${units}</div>
       ${moeLine(props, currentKey, meta)}
+      ${pctileLine(props, currentKey)}
       ${crimeCaveat(props, currentKey)}
     </div>`;
   } else {
@@ -881,11 +1025,16 @@ function buildSingleLegendBody(meta) {
     const N = currentScale.N;
     const palette = paletteFor(meta);
     const sorted = currentScale.values.slice().sort(d3.ascending);
+    let lastShownRange = "";
     for (let i = 0; i < N; i++) {
       const lo = i === 0 ? sorted[0] : breaks[i-1];
       const hi = i === N - 1 ? sorted[sorted.length-1] : breaks[i];
       const color = palette((i + 0.5) / N);
-      html += `<div class="row"><span class="swatch" style="background:${color}"></span>${fmtValue(lo, meta.fmt)} – ${fmtValue(hi, meta.fmt)}</div>`;
+      const range = `${fmtValue(lo, meta.fmt)} – ${fmtValue(hi, meta.fmt)}`;
+      // Don't repeat zero-zero buckets (happens when many tracts share a min value)
+      if (range === lastShownRange) continue;
+      lastShownRange = range;
+      html += `<div class="row"><span class="swatch" style="background:${color}"></span>${range}</div>`;
     }
   } else {
     const palette = paletteFor(meta);
@@ -1103,7 +1252,9 @@ function applyCurrent() {
       "Each axis is split into thirds across all NYC tracts. The 3×3 cell tells you where this tract falls on both variables at once.";
     renderBivLegend();
   }
+  renderCitySummary();
   if (geoLayer) geoLayer.setStyle(f => styleFor(f.properties));
+  syncUrlHash();
 }
 
 // scale-mode toggle (single only)
@@ -1338,6 +1489,95 @@ document.addEventListener("click", e => {
   }
 });
 
+// ===== borough quick-zoom =====
+const BOROUGH_VIEWS = {
+  all: { center: [40.7128, -73.95], zoom: 11 },
+  bx:  { center: [40.85, -73.87],   zoom: 12 },
+  bk:  { center: [40.65, -73.95],   zoom: 12 },
+  mn:  { center: [40.78, -73.97],   zoom: 12 },
+  qn:  { center: [40.71, -73.82],   zoom: 11 },
+  si:  { center: [40.58, -74.15],   zoom: 12 },
+};
+document.querySelectorAll("#borough-zoom button").forEach(b => {
+  b.addEventListener("click", () => {
+    const v = BOROUGH_VIEWS[b.dataset.zoom];
+    if (v && map) map.flyTo(v.center, v.zoom, { duration: 0.7 });
+  });
+});
+
+// ===== URL hash state =====
+// Encode mode, variable(s), geography, scale into the URL so views are shareable.
+let suppressHashApply = false;
+function syncUrlHash() {
+  if (suppressHashApply) return;
+  const parts = new URLSearchParams();
+  parts.set("g", geoLevel);
+  if (mode === "single") {
+    parts.set("v", currentKey);
+    parts.set("s", scaleMode);
+  } else {
+    parts.set("m", "biv");
+    parts.set("x", xKey);
+    parts.set("y", yKey);
+  }
+  const h = "#" + parts.toString();
+  if (location.hash !== h) history.replaceState(null, "", h);
+}
+function applyUrlHash() {
+  if (!location.hash || location.hash.length < 2) return;
+  const p = new URLSearchParams(location.hash.slice(1));
+  suppressHashApply = true;
+  try {
+    const g = p.get("g");
+    if (g && g !== geoLevel) setGeoLevel(g);
+    if (p.get("m") === "biv") {
+      const x = p.get("x"), y = p.get("y");
+      setMode("bivariate");
+      if (x && y && metaOf(x) && metaOf(y)) setBivPair(x, y, "");
+    } else {
+      const v = p.get("v");
+      if (v && metaOf(v)) setSingleVar(v);
+      const s = p.get("s");
+      if (s === "linear" || s === "quantile") {
+        scaleMode = s;
+        document.querySelectorAll("#scale-toggle button").forEach(b => b.classList.toggle("active", b.dataset.scale === s));
+        currentScale = buildScale(metaOf(currentKey));
+        if (geoLayer) geoLayer.setStyle(f => styleFor(f.properties));
+      }
+    }
+  } finally { suppressHashApply = false; }
+}
+window.addEventListener("hashchange", applyUrlHash);
+
+// ===== CSV export =====
+document.getElementById("export-csv").addEventListener("click", e => {
+  e.preventDefault();
+  if (!GEO) return;
+  // Always export geoid, borough, nta, plus the variable(s) currently in view (with MOE if present).
+  const cols = ["geoid", "borough", "nta"];
+  if (mode === "single") cols.push(currentKey, currentKey + "_moe");
+  else cols.push(xKey, xKey + "_moe", yKey, yKey + "_moe");
+  const rows = [cols.join(",")];
+  for (const f of GEO.features) {
+    const p = f.properties;
+    const cells = cols.map(k => {
+      const v = p[k];
+      if (v == null) return "";
+      if (typeof v === "string" && /[",\n]/.test(v)) return `"${v.replace(/"/g, '""')}"`;
+      return String(v);
+    });
+    rows.push(cells.join(","));
+  }
+  const csv = rows.join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const name = (mode === "single" ? currentKey : `${xKey}_x_${yKey}`) + `_${geoLevel}.csv`;
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+});
+
 // ===== bootstrap =====
 Promise.all([
   fetch("variables.json").then(r => r.json()),
@@ -1366,6 +1606,8 @@ Promise.all([
     console.error("setup error:", e);
   }
   try { initMap(); } catch (e) { console.error("map init error:", e); }
+  // Apply any hash-encoded view state (variable, mode, geography, scale) from a shared URL.
+  try { applyUrlHash(); } catch (e) { console.error("hash init error:", e); }
 }).catch(e => {
   console.error("data load error:", e);
   document.getElementById("cur-title").textContent = "Failed to load data";
