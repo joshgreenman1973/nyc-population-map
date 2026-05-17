@@ -602,12 +602,6 @@ for f in base["features"]:
     f["properties"] = d
     features.append(f)
 
-# Strip internal raw-count fields (prefixed with _) from final output to keep file size down.
-for f in features:
-    for k in list(f["properties"].keys()):
-        if k.startswith("_"):
-            del f["properties"][k]
-
 print(f"Joined {len(features)} tracts (geometry without data: {unmatched_geom}).")
 
 
@@ -842,6 +836,20 @@ for nf in nta_base["features"]:
     })
 
 print(f"Wrote {len(nta_features)} NTAs.")
+
+# Strip internal raw-count fields (prefixed with _) from BOTH outputs to save file size.
+# Must run AFTER the NTA aggregation block above, which reads from derived[geoid] — the
+# tract feature properties share the same dict reference as derived[geoid], so stripping
+# tracts too early was zeroing out the NTA-level Decennial percentages.
+for f in nta_features:
+    for k in list(f["properties"].keys()):
+        if k.startswith("_"):
+            del f["properties"][k]
+for f in features:
+    for k in list(f["properties"].keys()):
+        if k.startswith("_"):
+            del f["properties"][k]
+
 nta_out = {"type": "FeatureCollection", "features": nta_features}
 json.dump(nta_out, open(DOCS / "ntas.geojson", "w"))
 print(f"Wrote {DOCS/'ntas.geojson'}  ({(DOCS/'ntas.geojson').stat().st_size/1_000_000:.2f} MB)")
