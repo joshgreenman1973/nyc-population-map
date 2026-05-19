@@ -1030,8 +1030,8 @@ VARS = [
     # --- 13. Other (always last) ---
     ("Other", "pct_veteran", "Veterans (18+)", "pct", "%",
      "Share of civilians 18+ who are veterans."),
-    ("Other", "pct_no_internet", "No internet access", "pct", "%",
-     "Share of households with no internet access at all — neither a paid subscription nor any other means of getting online (ACS B28002_013)."),
+    ("Other", "pct_no_internet", "No home internet", "pct", "%",
+     "Share of households with no internet access at the residence — neither a paid subscription nor any other means of getting online from home (ACS B28002_013). Members of these households may still get online elsewhere (work, school, phone plan billed separately), but nothing at home."),
 ]
 
 vars_meta = [
