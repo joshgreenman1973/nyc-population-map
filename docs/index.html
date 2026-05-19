@@ -874,6 +874,9 @@ function bivCell(xb, yb) { return BIV_PALETTE[yb][xb]; }
 
 // ===== bivariate presets =====
 const PRESETS = [
+  { x: "pct_poverty",        y: "crime_violent_rate",  name: "Poverty × violent crime",
+    story: "The classic disadvantage-and-crime overlap. The upper-right is where high poverty rates and high violent-crime rates compound. Tracts on the lower diagonal — high poverty but low violent crime, or low poverty but elevated violent crime — are the ones that complicate the simple story." },
+
   // Kept presets (7) — each carries a distinct story.
   { x: "pct_bachelor_plus",  y: "pct_wfh",             name: "Education × work-from-home",
     story: "The laptop-class geography. The upper-right tracts are where a degree and a home office overlap; the lower-right are college-degreed but back at the office." },
@@ -894,8 +897,6 @@ const PRESETS = [
   // school opt-out, the two-NYCs density map, and the NYC-flipped walking signal.
   { x: "pct_owner_occupied", y: "mayor_2025_mamdani_pct", name: "Owner-occupied × Mamdani 2025",
     story: "Mamdani's 2025 coalition against the homeownership map. The upper-left is the renter-Mamdani base — dense tracts where ownership is rare and his support ran highest. The lower-right is the inverse: homeowner-heavy tracts (Staten Island, southeast Queens, parts of south Brooklyn) that resisted him. The upper-right is the surprise cell — homeowners who still went for Mamdani." },
-  { x: "crime_violent_rate", y: "pct_owner_occupied",  name: "Violent crime × owner-occupied",
-    story: "Where ownership and violent crime cluster — and where they don't. The lower-right is the conventional pattern: high violent-crime rates in tracts dominated by renters. The upper-left is the inverse — low-crime, homeowner-heavy tracts (much of Staten Island, eastern Queens). Tracts with both elevated crime and meaningful homeownership complicate the renter-vs-owner safety story." },
   { x: "crime_property_rate", y: "median_gross_rent",  name: "Property crime × median rent",
     story: "Property crime isn't just a low-rent phenomenon. The upper-right is high rents with high property-crime rates — the foot-traffic, retail-heavy commercial corridors (Manhattan core, downtown Brooklyn) where grand larceny accumulates. The upper-left is the cheaper-rent, high-property-crime pattern; the lower half is comparatively quiet." },
   { x: "pct_non_english_home", y: "avg_hh_size",       name: "Non-English at home × household size",

@@ -939,7 +939,7 @@ VARS = [
 
     # --- 6. Housing ---
     ("Housing", "median_gross_rent", "Median gross rent", "usd", "$/mo",
-     "Median monthly gross rent for renter-occupied units paying cash rent (excludes no-cash-rent units)."),
+     "Median monthly gross rent for renter-occupied units paying cash rent. \"Gross\" rent is contract rent plus the estimated cost of utilities and fuel (electricity, gas, water, sewer, oil) when paid by the renter — so two apartments with the same advertised rent can have different gross rents depending on what's included. Excludes no-cash-rent units (ACS B25064)."),
     ("Housing", "median_home_value", "Median home value", "usd", "$",
      "Median value of owner-occupied housing units, by self-report (ACS B25077)."),
     ("Housing", "median_rent_burden", "Median rent burden", "num1", "%",
@@ -955,11 +955,11 @@ VARS = [
 
     # --- 7. Crime ---
     ("Crime (rolling 12 mo.)", "crime_total_rate", "Major-felony rate", "num1", "per 1,000 residents",
-     "All seven major felonies — murder, rape, robbery, felony assault, burglary, grand larceny, grand larceny of motor vehicle — per 1,000 residents over the most recent 12 months (NYPD)."),
+     "All seven major felonies — murder, rape, robbery, felony assault, burglary, grand larceny, grand larceny of motor vehicle — per 1,000 residents over the most recent 12 months (NYPD). Denominator is residential population, so tracts with low residential population but high daytime/visitor traffic (Midtown, FiDi, Times Square, the parks, transit hubs) show inflated rates that reflect crimes against commuters and visitors, not residents."),
     ("Crime (rolling 12 mo.)", "crime_violent_rate", "Violent-crime rate", "num1", "per 1,000 residents",
-     "Murder, rape, robbery, and felony assault per 1,000 residents over the most recent 12 months (NYPD)."),
+     "Murder, rape, robbery, and felony assault per 1,000 residents over the most recent 12 months (NYPD). Same residential-denominator caveat as the major-felony rate: commercial / transit / park tracts can look extreme because few people live there."),
     ("Crime (rolling 12 mo.)", "crime_property_rate", "Property-crime rate", "num1", "per 1,000 residents",
-     "Burglary, grand larceny, and grand larceny of motor vehicle per 1,000 residents over the most recent 12 months (NYPD)."),
+     "Burglary, grand larceny, and grand larceny of motor vehicle per 1,000 residents over the most recent 12 months (NYPD). Same residential-denominator caveat: in commercial-heavy tracts the rate captures crimes against businesses and visitors as well as residents."),
 
     # --- 8. Education ---
     # Ordered low → high attainment.
@@ -999,15 +999,15 @@ VARS = [
 
     # --- 12. Elections (NYC BoE) ---
     ("Elections", "pres_2024_d_pct", "Harris vote share, 2024 president", "pct", "%",
-     "Kamala Harris share of the two-party (D+R) vote in the November 2024 general election. NYC BoE ED-level results, aggregated to tracts by ED centroid."),
+     "Kamala Harris share of the major-party (D+R) vote in the November 2024 general election. Each candidate's total includes every ballot line they appeared on — Harris counts Democratic + Working Families; Trump counts Republican + Conservative. NYC BoE ED-level results, aggregated to tracts by ED centroid."),
     ("Elections", "pres_2024_r_pct", "Trump vote share, 2024 president", "pct", "%",
-     "Donald Trump share of the two-party (D+R) vote in the November 2024 general election. NYC BoE ED-level results."),
+     "Donald Trump share of the major-party (D+R) vote in the November 2024 general election. Trump's total includes Republican + Conservative ballot lines; Harris's includes Democratic + Working Families. NYC BoE ED-level results."),
     ("Elections", "pres_2024_total", "Major-party votes cast, 2024 president", "int", "votes",
      "Total D+R votes cast for president in 2024 in this tract."),
     ("Elections", "pres_2020_d_pct", "Biden vote share, 2020 president", "pct", "%",
-     "Joe Biden share of the two-party (D+R) vote in the November 2020 general election. NYC BoE ED-level results."),
+     "Joe Biden share of the major-party (D+R) vote in the November 2020 general election. Biden's total includes Democratic + Working Families ballot lines; Trump's includes Republican + Conservative. NYC BoE ED-level results."),
     ("Elections", "pres_2020_r_pct", "Trump vote share, 2020 president", "pct", "%",
-     "Donald Trump share of the two-party (D+R) vote in the November 2020 general election."),
+     "Donald Trump share of the major-party (D+R) vote in the November 2020 general election. Trump's total includes Republican + Conservative ballot lines; Biden's includes Democratic + Working Families."),
     ("Elections", "pres_2020_total", "Major-party votes cast, 2020 president", "int", "votes",
      "Total D+R votes cast for president in 2020 in this tract."),
     ("Elections", "pres_d_shift_2020_2024", "Democratic shift, 2020 → 2024 president", "num1", "percentage points",
