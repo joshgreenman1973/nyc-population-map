@@ -1,0 +1,40 @@
+name: Refresh crime data
+
+on:
+  schedule:
+    # Daily at 11:15 UTC. auto_refresh.py self-gates on NYPD's latest report
+    # date and exits immediately if nothing new — NYPD posts current-YTD
+    # complaint data quarterly, so this is a cheap no-op most days.
+    - cron: '15 11 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install shapely
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run self-gating refresh
+        run: python3 auto_refresh.py
+
+      - name: Upload log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto_refresh_log
+          path: auto_refresh.log
