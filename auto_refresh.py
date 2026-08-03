@@ -83,8 +83,30 @@ def run(cmd):
     return r
 
 
+def git_sync():
+    """Bring local main up to date with origin. The GitHub Actions twin of
+    this job may have shipped a refresh already; without this, a stale clone
+    re-does its work and the push gets rejected. Aborts a failed rebase so
+    the repo is never left mid-rebase."""
+    run(["git", "fetch", "origin"])
+    try:
+        run(["git", "rebase", "--autostash", "origin/main"])
+    except Exception:
+        subprocess.run(["git", "rebase", "--abort"], cwd=ROOT, capture_output=True)
+        raise
+
+
 def main():
     log("=== auto_refresh start ===")
+
+    # --- sync first so the gate reads what's actually shipped, not a stale clone ---
+    try:
+        git_sync()
+    except Exception as e:
+        log(f"Git sync error: {e}")
+        send_imessage(f"NYC population map: could not sync with GitHub before "
+                      f"refresh ({e}). See auto_refresh.log.")
+        return 1
 
     # --- cheap gate: has NYPD data advanced past what we already shipped? ---
     try:
@@ -123,7 +145,12 @@ def main():
             return 0
         run(["git", "commit", "-m",
              f"Auto-refresh crime: rolling window now ends {new_end}"])
-        run(["git", "push", "origin", "HEAD"])
+        try:
+            run(["git", "push", "origin", "HEAD"])
+        except Exception:
+            # Lost a race with a concurrent run — rebase onto it, retry once.
+            git_sync()
+            run(["git", "push", "origin", "HEAD"])
     except Exception as e:
         log(f"Deploy error: {e}")
         send_imessage(f"NYC population map: crime data rebuilt but PUSH FAILED "
