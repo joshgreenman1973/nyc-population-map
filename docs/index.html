@@ -1524,12 +1524,12 @@ function attachGeoLayer() {
 function initMap() {
   map = L.map("map", { zoomControl: false, preferCanvas: true }).setView([40.7128, -73.95], 11);
   L.control.zoom({ position: "topright" }).addTo(map);
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png?key=cb1_2r82_1_ae4e70b6166057bc41b89638", {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> · <a href="https://carto.com/attributions">CARTO</a>',
     subdomains: 'abcd', maxZoom: 18,
   }).addTo(map);
   attachGeoLayer();
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png?key=cb1_2r82_1_ae4e70b6166057bc41b89638",
     { subdomains: 'abcd', maxZoom: 18, pane: 'shadowPane', opacity: 0.85 }).addTo(map);
   // Center on NYC at a zoom that fills the viewport (was fitBounds, which over-padded).
   map.setView([40.715, -73.94], 11);
