@@ -677,7 +677,7 @@
       </div>
 
       <!-- Reliability shading toggle (applies to both single + bivariate) -->
-      <label id="reliability-toggle" title="Fade tracts whose margin of error exceeds 66% of the estimate (Census Bureau's 'unreliable' tier). The data is always shown; this just visually flags uncertainty.">
+      <label id="reliability-toggle" title="Fade tracts whose margin of error exceeds 66% of the estimate (the 'unreliable' tier under a common convention, not an official Census Bureau standard). The data is always shown; this just visually flags uncertainty.">
         <input type="checkbox" id="show-reliability"> Fade unreliable estimates
       </label>
 
@@ -792,7 +792,7 @@ let RELEASE = null;
 let mode = "single";             // "single" | "bivariate"
 let showReliability = false;     // "fade unreliable estimates" toggle
 
-// Reliability tier from MOE/|estimate| ratio (Census Bureau guidance, 90% CI):
+// Reliability tier from MOE/|estimate| ratio (common convention, e.g. Esri; 90% CI):
 //   ≤ 0.20 reliable;  0.20–0.66 use with caution;  > 0.66 unreliable.
 const REL_CAUT = 0.20, REL_UNR = 0.66;
 function moeRatio(props, key) {

@@ -115,7 +115,7 @@ def pct(num, denom):
     return 100.0 * num / denom
 
 
-# ---------- MOE propagation (ACS Handbook Appendix 3 formulas) ----------
+# ---------- MOE propagation (formulas from the ACS General Handbook, chapter 8) ----------
 # All MOEs from Census Reporter are at the 90% confidence level.
 import math as _math
 
@@ -152,7 +152,8 @@ def moe_pct(num, num_moe, denom, denom_moe):
 
 def cv(estimate, moe):
     """Coefficient of variation = MOE / (1.645 · estimate). Used for reliability flagging.
-    Census Bureau guidance: CV ≤ 0.12 reliable, 0.12–0.40 use with caution, > 0.40 unreliable.
+    Common convention (Esri and others; not an official Census Bureau standard):
+    CV ≤ 0.12 reliable, 0.12–0.40 use with caution, > 0.40 unreliable.
     """
     if estimate is None or moe is None or estimate == 0:
         return None
@@ -160,8 +161,6 @@ def cv(estimate, moe):
 
 
 # ---------- derive metrics (refactored as function so we can call it per-tract AND per-NTA aggregate) ----------
-RELIABILITY_THRESHOLD = 0.30  # MOE > 30% of estimate → flag as unreliable
-
 def derive_one(d, m):
         """Given raw ACS estimate dict d and MOE dict m, return (record, moes_dict)."""
         pop = get(d, "B01003001"); pop_moe = get(m, "B01003001")
@@ -536,7 +535,7 @@ if crime_path.exists():
             # flag for the UI to display a caveat that the denominator is residents-only.
             if d["crime_total_rate"] > 100:
                 d["crime_commercial_daytime"] = True
-    print(f"  suppressed rates for {suppressed_low_pop} tracts with population < 50.")
+    print(f"  suppressed rates for {suppressed_low_pop} tracts with population < 200.")
 else:
     print(f"No {crime_path.name} found — skipping crime merge. Run fetch_crime.py first.")
 
@@ -635,7 +634,7 @@ def agg_moe_cells(tract_geoids, source):
             out[k] = out.get(k, 0) + v * v
     return {k: _math.sqrt(v) for k, v in out.items()}
 
-# Helper: population-weighted average of tract medians (best we can do without re-fetching).
+# Helper: weighted average of tract medians (a true NTA median would need microdata).
 def weighted_median_estimate(tract_geoids, median_key, weight_key="B01003001"):
     weighted_sum = 0.0
     weight_total = 0.0
@@ -664,15 +663,19 @@ for nf in nta_base["features"]:
     # since you can't aggregate medians from medians; we flag this in methodology).
     # Also clear their MOEs from the dict — the sum-of-squares of tract median MOEs is not a
     # defensible MOE for a population-weighted average. We will not show ± for aggregated medians.
-    for median_key, raw in [
-        ("median_age", "B01002001"),
-        ("median_hh_income", "B19013001"),
-        ("median_gross_rent", "B25064001"),
-        ("median_home_value", "B25077001"),
-        ("median_rent_burden", "B25071001"),
-        ("avg_hh_size", "B25010001"),
+    # Weight each tract's median by the universe of its own table: people for age,
+    # households for income and household size, renter-occupied units for rent and
+    # rent burden, owner-occupied units for home value. (For avg_hh_size this is exact:
+    # Σ(avg × households) / Σ households = people in households / households.)
+    for median_key, raw, weight in [
+        ("median_age", "B01002001", "B01003001"),
+        ("median_hh_income", "B19013001", "B19001001"),
+        ("median_gross_rent", "B25064001", "B25003003"),
+        ("median_home_value", "B25077001", "B25003002"),
+        ("median_rent_burden", "B25071001", "B25003003"),
+        ("avg_hh_size", "B25010001", "B11016001"),
     ]:
-        rec[median_key] = weighted_median_estimate(member_tracts, raw)
+        rec[median_key] = weighted_median_estimate(member_tracts, raw, weight)
         moes[median_key] = None  # suppress; aggregated medians don't have a clean MOE
 
     # Attach MOE companions
@@ -905,7 +908,7 @@ VARS = [
     ("Origin & language", "pct_foreign_born", "Foreign-born", "pct", "%",
      "Share of residents born outside the United States, not counting those born abroad to American parents (who Census classifies as native)."),
     ("Origin & language", "pct_non_citizen", "Not a U.S. citizen", "pct", "%",
-     "Share of residents who are foreign-born and have not naturalized — the closest publicly available proxy for the undocumented population, but it OVER-counts that population. It includes lawful permanent residents (green-card holders), visa holders (students, H-1B, etc.), refugees, asylees, and TPS recipients. Nationally about a quarter of foreign-born residents are undocumented; in NYC, Center for Migration Studies estimates roughly a third of non-citizens are undocumented. See methodology for the full caveat."),
+     "Share of residents who are foreign-born and have not naturalized — the closest publicly available proxy for the undocumented population, but it OVER-counts that population. It includes lawful permanent residents (green-card holders), visa holders (students, H-1B, etc.), refugees, asylees, and TPS recipients. Nationally, Pew estimates 27% of foreign-born residents were unauthorized in 2023; in New York City, the Center for Migration Studies estimates 535,000 undocumented residents in 2023, about 15% of the foreign-born and roughly two-fifths of non-citizens. See methodology for the full caveat."),
     ("Origin & language", "pct_non_english_home", "Non-English at home", "pct", "%",
      "Share of residents 5+ who speak a language other than English at home."),
 
@@ -947,7 +950,7 @@ VARS = [
     ("Housing", "rs_share_of_renters", "Rent-stabilized share of rentals", "pct", "%",
      "Estimated share of renter-occupied units that are rent-stabilized, as of 2024. Numerator: tax-bill-derived stabilized unit count (see methodology — NYC HCR does not publish per-building unit counts directly, so the number is reverse-engineered from each property's Rent Stabilization Fee on its DOF Statement of Account). Denominator: ACS 2020-24 renter-occupied units. Clipped at 100%."),
     ("Housing", "rs_units_2024", "Rent-stabilized units (count)", "int", "units",
-     "Estimated rent-stabilized apartments in the tract in 2024. Derived from per-building Rent Stabilization Fees on NYC Department of Finance tax bills — there is no official DHCR per-building unit publication. Citywide total (~994k) matches the standard ~974k figure to within ~2%. See methodology for full caveats."),
+     "Estimated rent-stabilized apartments in the tract in 2024. Derived from per-building Rent Stabilization Fees on NYC Department of Finance tax bills — there is no official DHCR per-building unit publication. Citywide total (~994k) is consistent with the roughly one million stabilized units the Rent Guidelines Board reports. See methodology for full caveats."),
     ("Housing", "rs_buildings", "Rent-stabilized buildings (count)", "int", "buildings",
      "Number of buildings with at least one rent-stabilized unit billed on their 2024 property tax bill. This is the cleaner of the two rent-stabilization metrics — the building list is well-defined, while the per-building unit count is a tax-bill-derived estimate."),
     ("Housing", "rs_density_per_sqmi", "Rent-stabilized unit density", "num1", "units/sq mi",
