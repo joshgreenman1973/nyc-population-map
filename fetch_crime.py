@@ -9,9 +9,10 @@ Window: last 12 months for which the Historic + Current YTD datasets combined ha
 Dates use RPT_DT (date the complaint was reported to NYPD), never CMPLT_FR_DT.
 
 NYPD places un-geocodable complaints, and nearly every rape complaint, at the
-precinct station house. Those are spread across the precinct in proportion to its
-located complaints of the same type (nypd_places.place), so station-house tracts do
-not absorb a precinct's worth of crime. Counts can therefore be fractional.
+precinct station house. Those have no known street location and are left out of the
+tract counts (nypd_places.place); the count left out is recorded in meta. Complaints on
+a tract boundary are shared equally among the tracts that meet there, so counts can be
+fractional.
 
 Output: docs/crime_by_tract.json  →  { GEOID: {violent: n, property: n, total: n} }
 """
@@ -137,8 +138,8 @@ def main():
     for gid, c in placed.items():
         v, pr = c.get("violent", 0.0), c.get("property", 0.0)
         counts[gid] = {"violent": round(v, 3), "property": round(pr, 3), "total": round(v + pr, 3)}
-    print(f"Placed {rep['located']:,} complaints by location and spread {rep['at_station_house']:,} "
-          f"station-house complaints across their precincts; {rep['unplaced']:,} fell outside every tract.")
+    print(f"Placed {rep['located']:,} complaints by location ({rep['shared_on_boundary']:,} shared on a boundary); "
+          f"left out {rep['left_out_at_station_house']:,} station-house complaints; {rep['unplaced']:,} fell outside every tract.")
 
     meta = {
         "window_start": start.isoformat(),
@@ -146,7 +147,9 @@ def main():
         "window_days": (end - start).days + 1,
         "total_complaints": len(rows),
         "matched_complaints": round(sum(c["total"] for c in counts.values())),
-        "station_house_complaints_spread": rep["at_station_house"],
+        "station_house_complaints_left_out": rep["left_out_at_station_house"],
+        "station_house_left_out_by_type": rep["left_out_by_category"],
+        "shared_on_boundary": rep["shared_on_boundary"],
         "source_historic": HISTORIC,
         "source_current": CURRENT,
         "categories": {

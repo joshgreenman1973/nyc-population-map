@@ -1024,11 +1024,11 @@ VARS = [
 
     # --- 7. Crime ---
     ("Crime (rolling 12 mo.)", "crime_total_rate", "Major-felony rate", "num1", "per 1,000 residents",
-     "All seven major felonies — murder, rape, robbery, felony assault, burglary, grand larceny, grand larceny of motor vehicle — per 1,000 residents over the most recent 12 months (NYPD). Denominator is residential population, so areas with few residents but heavy daytime or visitor traffic (Midtown, FiDi, Times Square, the parks, transit hubs) show inflated rates that reflect crimes against commuters and visitors, not residents."),
+     "All seven major felonies — murder, rape, robbery, felony assault, burglary, grand larceny, grand larceny of motor vehicle — per 1,000 residents over the most recent 12 months (NYPD). Complaints NYPD logs at the precinct station house (4% of them, including nearly every rape) have no street location and are left out. Denominator is residential population, so areas with few residents but heavy daytime or visitor traffic (Midtown, FiDi, Times Square, the parks, transit hubs) show inflated rates that reflect crimes against commuters and visitors, not residents."),
     ("Crime (rolling 12 mo.)", "crime_violent_rate", "Violent-crime rate", "num1", "per 1,000 residents",
-     "Murder, rape, robbery, and felony assault per 1,000 residents over the most recent 12 months (NYPD). Same residential-denominator caveat as the major-felony rate: commercial and transit-hub areas can look extreme because few people live there."),
+     "Murder, rape, robbery, and felony assault per 1,000 residents over the most recent 12 months (NYPD). Complaints NYPD logs at the precinct station house, which include nearly every rape (to protect victims), have no street location and are left out, so in practice this rate counts very few rapes. Same residential-denominator caveat as the major-felony rate: commercial and transit-hub areas can look extreme because few people live there."),
     ("Crime (rolling 12 mo.)", "crime_property_rate", "Property-crime rate", "num1", "per 1,000 residents",
-     "Burglary, grand larceny, and grand larceny of motor vehicle per 1,000 residents over the most recent 12 months (NYPD). Same residential-denominator caveat: in commercial-heavy areas the rate captures crimes against businesses and visitors as well as residents."),
+     "Burglary, grand larceny, and grand larceny of motor vehicle per 1,000 residents over the most recent 12 months (NYPD). Complaints NYPD logs at the precinct station house, without a street location, are left out. Same residential-denominator caveat: in commercial-heavy areas the rate captures crimes against businesses and visitors as well as residents."),
 
     # --- 8. Education ---
     # Ordered low → high attainment.
