@@ -8,7 +8,12 @@ Major felonies (NYPD's standard "Index 7" classification):
 Window: last 12 months for which the Historic + Current YTD datasets combined have data.
 Dates use RPT_DT (date the complaint was reported to NYPD), never CMPLT_FR_DT.
 
-Output: docs/crime_by_tract.json  →  { GEOID: {violent: n, property: n, total: n, window_days: 365} }
+NYPD places un-geocodable complaints, and nearly every rape complaint, at the
+precinct station house. Those are spread across the precinct in proportion to its
+located complaints of the same type (nypd_places.place), so station-house tracts do
+not absorb a precinct's worth of crime. Counts can therefore be fractional.
+
+Output: docs/crime_by_tract.json  →  { GEOID: {violent: n, property: n, total: n} }
 """
 import json
 import time
@@ -17,8 +22,7 @@ import urllib.request
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
-from shapely.geometry import shape, Point
-from shapely.strtree import STRtree
+from nypd_places import TractIndex, load_stations, place
 
 ROOT = Path(__file__).parent
 DOCS = ROOT / "docs"
@@ -87,7 +91,7 @@ def main():
     print(f"Window: {start} → {end}  ({(end - start).days + 1} days)")
 
     codes_clause = "ky_cd in(" + ",".join(f"'{c}'" for c in sorted(ALL_CODES)) + ")"
-    fields = ["cmplnt_num", "rpt_dt", "ky_cd", "latitude", "longitude"]
+    fields = ["cmplnt_num", "rpt_dt", "ky_cd", "addr_pct_cd", "latitude", "longitude"]
 
     rows = []
     # If start falls in Historic's range, query Historic for [start, end_historic]
@@ -116,51 +120,33 @@ def main():
 
     print(f"Total complaint rows: {len(rows):,}")
 
-    # ---- spatial join to tracts ----
-    print("Loading tract geometry...")
-    tracts = json.load(open(ROOT / "nyc2020_tracts.geojson"))
-    geoms = []
-    geoids = []
-    for f in tracts["features"]:
-        g = shape(f["geometry"])
-        geoms.append(g)
-        geoids.append(f["properties"]["geoid"])
-    tree = STRtree(geoms)
-
-    counts = {gid: {"violent": 0, "property": 0, "total": 0} for gid in geoids}
-    unmatched = 0
+    # ---- place in tracts, spreading station-house complaints across the precinct ----
+    recs = []
     for row in rows:
         try:
-            lat = float(row["latitude"])
-            lon = float(row["longitude"])
+            lat, lon = float(row["latitude"]), float(row["longitude"])
         except (TypeError, ValueError, KeyError):
             continue
         if not (40.4 <= lat <= 41.0 and -74.3 <= lon <= -73.6):
             continue  # outside NYC bbox
-        pt = Point(lon, lat)
-        hits = tree.query(pt)  # returns indices in shapely 2.x
-        matched = False
-        for idx in hits:
-            if geoms[idx].contains(pt):
-                gid = geoids[idx]
-                code = row["ky_cd"]
-                if code in VIOLENT:
-                    counts[gid]["violent"] += 1
-                elif code in PROPERTY:
-                    counts[gid]["property"] += 1
-                counts[gid]["total"] += 1
-                matched = True
-                break
-        if not matched:
-            unmatched += 1
-    print(f"Matched complaints to tracts; {unmatched:,} did not fall in any tract polygon.")
+        cat = "violent" if row["ky_cd"] in VIOLENT else "property"
+        recs.append({"lat": lat, "lon": lon, "pct": row.get("addr_pct_cd"), "cat": cat})
+    index = TractIndex()
+    placed, rep = place(recs, load_stations(), index, "pct", "cat")
+    counts = {gid: {"violent": 0, "property": 0, "total": 0} for gid in index.geoids}  # zeros are data
+    for gid, c in placed.items():
+        v, pr = c.get("violent", 0.0), c.get("property", 0.0)
+        counts[gid] = {"violent": round(v, 3), "property": round(pr, 3), "total": round(v + pr, 3)}
+    print(f"Placed {rep['located']:,} complaints by location and spread {rep['at_station_house']:,} "
+          f"station-house complaints across their precincts; {rep['unplaced']:,} fell outside every tract.")
 
     meta = {
         "window_start": start.isoformat(),
         "window_end": end.isoformat(),
         "window_days": (end - start).days + 1,
         "total_complaints": len(rows),
-        "matched_complaints": sum(c["total"] for c in counts.values()),
+        "matched_complaints": round(sum(c["total"] for c in counts.values())),
+        "station_house_complaints_spread": rep["at_station_house"],
         "source_historic": HISTORIC,
         "source_current": CURRENT,
         "categories": {

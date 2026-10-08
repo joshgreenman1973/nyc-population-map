@@ -1,0 +1,718 @@
+[
+ {
+  "precinct": 1,
+  "address": "16 Ericsson Place",
+  "zip": "10013",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/1st-precinct.page",
+  "geocoded": "16 ERICSSON PLACE, New York, NY, USA",
+  "lat": 40.720251,
+  "lon": -74.007226
+ },
+ {
+  "precinct": 5,
+  "address": "19 Elizabeth Street",
+  "zip": "10013",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/5th-precinct.page",
+  "geocoded": "19 ELIZABETH STREET, New York, NY, USA",
+  "lat": 40.716195,
+  "lon": -73.997491
+ },
+ {
+  "precinct": 6,
+  "address": "233 West 10th Street",
+  "zip": "10014",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/6th-precinct.page",
+  "geocoded": "233 WEST 10 STREET, New York, NY, USA",
+  "lat": 40.734184,
+  "lon": -74.005407
+ },
+ {
+  "precinct": 7,
+  "address": "19 1/2 Pitt Street",
+  "zip": "10002",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/7th-precinct.page",
+  "geocoded": "2 PITT STREET, New York, NY, USA",
+  "lat": 40.715357,
+  "lon": -73.983772
+ },
+ {
+  "precinct": 9,
+  "address": "321 East 5 Street",
+  "zip": "10003",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/9th-precinct.page",
+  "geocoded": "321 EAST 5 STREET, New York, NY, USA",
+  "lat": 40.726544,
+  "lon": -73.987833
+ },
+ {
+  "precinct": 10,
+  "address": "230 West 20th Street",
+  "zip": "10011",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/10th-precinct.page",
+  "geocoded": "230 WEST 20 STREET, New York, NY, USA",
+  "lat": 40.742709,
+  "lon": -73.998646
+ },
+ {
+  "precinct": 13,
+  "address": "230 East 21st Street",
+  "zip": "10010",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/13th-precinct.page",
+  "geocoded": "230 EAST 21 STREET, New York, NY, USA",
+  "lat": 40.736768,
+  "lon": -73.983473
+ },
+ {
+  "precinct": 14,
+  "address": "357 West 35th Street",
+  "zip": "10001",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/midtown-south-precinct.page",
+  "geocoded": "357 WEST 35 STREET, New York, NY, USA",
+  "lat": 40.753882,
+  "lon": -73.994829
+ },
+ {
+  "precinct": 17,
+  "address": "167 East 51st Street",
+  "zip": "10022",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/17th-precinct.page",
+  "geocoded": "167 EAST 51 STREET, New York, NY, USA",
+  "lat": 40.756914,
+  "lon": -73.970582
+ },
+ {
+  "precinct": 18,
+  "address": "306 West 54th Street",
+  "zip": "10019",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/midtown-north-precinct.page",
+  "geocoded": "306 WEST 54 STREET, New York, NY, USA",
+  "lat": 40.764968,
+  "lon": -73.985088
+ },
+ {
+  "precinct": 19,
+  "address": "153 East 67th Street",
+  "zip": "10065",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/19th-precinct.page",
+  "geocoded": "153 EAST 67 STREET, New York, NY, USA",
+  "lat": 40.767145,
+  "lon": -73.963813
+ },
+ {
+  "precinct": 20,
+  "address": "120 West 82nd Street",
+  "zip": "10024",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/20th-precinct.page",
+  "geocoded": "120 WEST 82 STREET, New York, NY, USA",
+  "lat": 40.784084,
+  "lon": -73.975084
+ },
+ {
+  "precinct": 22,
+  "address": "86th and Transverse Rd",
+  "zip": "10024",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/central-park-precinct.page",
+  "geocoded": "10 WEST 86 STREET, New York, NY, USA",
+  "lat": 40.785449,
+  "lon": -73.970281
+ },
+ {
+  "precinct": 23,
+  "address": "164 East 102 Street",
+  "zip": "10029",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/23rd-precinct.page",
+  "geocoded": "164 EAST 102 STREET, New York, NY, USA",
+  "lat": 40.789047,
+  "lon": -73.947147
+ },
+ {
+  "precinct": 24,
+  "address": "151 West 100th Street",
+  "zip": "10025",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/24th-precinct.page",
+  "geocoded": "151 WEST 100 STREET, New York, NY, USA",
+  "lat": 40.79651,
+  "lon": -73.967341
+ },
+ {
+  "precinct": 25,
+  "address": "120 East 119th Street",
+  "zip": "10035",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/25th-precinct.page",
+  "geocoded": "120 EAST 119 STREET, New York, NY, USA",
+  "lat": 40.800697,
+  "lon": -73.94112
+ },
+ {
+  "precinct": 26,
+  "address": "520 West 126th Street",
+  "zip": "10027",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/26th-precinct.page",
+  "geocoded": "520 WEST 126 STREET, New York, NY, USA",
+  "lat": 40.814692,
+  "lon": -73.956532
+ },
+ {
+  "precinct": 28,
+  "address": "2271-89 8th Ave.",
+  "zip": "10027",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/28th-precinct.page",
+  "geocoded": "2271 8 AVENUE, New York, NY, USA",
+  "lat": 40.80881,
+  "lon": -73.952574
+ },
+ {
+  "precinct": 30,
+  "address": "451 West 151st Street",
+  "zip": "10031",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/30th-precinct.page",
+  "geocoded": "451 WEST 151 STREET, New York, NY, USA",
+  "lat": 40.828843,
+  "lon": -73.943746
+ },
+ {
+  "precinct": 32,
+  "address": "250 West 135th Street",
+  "zip": "10030",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/32nd-precinct.page",
+  "geocoded": "250 WEST 135 STREET, New York, NY, USA",
+  "lat": 40.815739,
+  "lon": -73.945356
+ },
+ {
+  "precinct": 33,
+  "address": "2207 Amsterdam Ave.",
+  "zip": "10032",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/33rd-precinct.page",
+  "geocoded": "2207 AMSTERDAM AVENUE, New York, NY, USA",
+  "lat": 40.840588,
+  "lon": -73.935729
+ },
+ {
+  "precinct": 34,
+  "address": "4295 Broadway",
+  "zip": "10033",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/34th-precinct.page",
+  "geocoded": "4295 B'WAY, New York, NY, USA",
+  "lat": 40.851535,
+  "lon": -73.935375
+ },
+ {
+  "precinct": 40,
+  "address": "257 Alexander Avenue",
+  "zip": "10454",
+  "page": "https://www.nyc.gov/assets/bronxcb4/downloads/pdf/2022/NYPD_in_Bronx_Community_Board_Four.pdf",
+  "sources": [
+   "https://www.nyc.gov/assets/bronxcb4/downloads/pdf/2022/NYPD_in_Bronx_Community_Board_Four.pdf",
+   "https://www.bxtimes.com/?p=142587"
+  ],
+  "note": "40th Precinct station house until late 2024",
+  "geocoded": "257 ALEXANDER AVENUE, Bronx, NY, USA",
+  "lat": 40.810361,
+  "lon": -73.925317
+ },
+ {
+  "precinct": 40,
+  "address": "567 E 149th Street",
+  "zip": "10455",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/40th-precinct.page",
+  "geocoded": "567 EAST 149 STREET, Bronx, NY, USA",
+  "lat": 40.81526,
+  "lon": -73.9128
+ },
+ {
+  "precinct": 41,
+  "address": "1035 Longwood Ave.",
+  "zip": "10459",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/41st-precinct.page",
+  "geocoded": "1035 LONGWOOD AVENUE, Bronx, NY, USA",
+  "lat": 40.816345,
+  "lon": -73.895673
+ },
+ {
+  "precinct": 42,
+  "address": "830 Washington Ave.",
+  "zip": "10451",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/42nd-precinct.page",
+  "geocoded": "830 WASHINGTON AVENUE, Bronx, NY, USA",
+  "lat": 40.822481,
+  "lon": -73.911252
+ },
+ {
+  "precinct": 43,
+  "address": "900 Fteley Ave.",
+  "zip": "10473",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/43rd-precinct.page",
+  "geocoded": "900 FTELEY AVENUE, Bronx, NY, USA",
+  "lat": 40.823006,
+  "lon": -73.869799
+ },
+ {
+  "precinct": 44,
+  "address": "2 East 169 Street",
+  "zip": "10452",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/44th-precinct.page",
+  "geocoded": "2 EAST 169 STREET, Bronx, NY, USA",
+  "lat": 40.837147,
+  "lon": -73.919803
+ },
+ {
+  "precinct": 45,
+  "address": "2877 Barkley Ave.",
+  "zip": "10465",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/45th-precinct.page",
+  "geocoded": "2877 BARKLEY AVENUE, Bronx, NY, USA",
+  "lat": 40.830851,
+  "lon": -73.827324
+ },
+ {
+  "precinct": 46,
+  "address": "2120 Ryer Ave.",
+  "zip": "10457",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/46th-precinct.page",
+  "geocoded": "2120 RYER AVENUE, Bronx, NY, USA",
+  "lat": 40.853969,
+  "lon": -73.900136
+ },
+ {
+  "precinct": 47,
+  "address": "4111 Laconia Avenue",
+  "zip": "10466",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/47th-precinct.page",
+  "geocoded": "4111 LACONIA AVENUE, Bronx, NY, USA",
+  "lat": 40.887516,
+  "lon": -73.847549
+ },
+ {
+  "precinct": 48,
+  "address": "450 Cross Bronx Expressway",
+  "zip": "10457",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/48th-precinct.page",
+  "geocoded": "450 CROSS BRONX EXPRESSWAY, Bronx, NY, USA",
+  "lat": 40.843895,
+  "lon": -73.900355
+ },
+ {
+  "precinct": 49,
+  "address": "2121 Eastchester Road",
+  "zip": "10461",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/49th-precinct.page",
+  "geocoded": "2121 EASTCHESTER ROAD, Bronx, NY, USA",
+  "lat": 40.856109,
+  "lon": -73.844396
+ },
+ {
+  "precinct": 50,
+  "address": "3450 Kingsbridge Ave.",
+  "zip": "10463",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/50th-precinct.page",
+  "geocoded": "3450 KINGSBRIDGE AVENUE, Bronx, NY, USA",
+  "lat": 40.883511,
+  "lon": -73.902442
+ },
+ {
+  "precinct": 52,
+  "address": "3016 Webster Ave.",
+  "zip": "10467",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/52nd-precinct.page",
+  "geocoded": "3016 WEBSTER AVENUE, Bronx, NY, USA",
+  "lat": 40.869081,
+  "lon": -73.879648
+ },
+ {
+  "precinct": 60,
+  "address": "2951 West 8th Street",
+  "zip": "11224",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/60th-precinct.page",
+  "geocoded": "2951 WEST 8 STREET, Brooklyn, NY, USA",
+  "lat": 40.576624,
+  "lon": -73.976102
+ },
+ {
+  "precinct": 61,
+  "address": "2575 Coney Island",
+  "zip": "11223",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/61st-precinct.page",
+  "geocoded": "2575 CONEY ISLAND AVENUE, Brooklyn, NY, USA",
+  "lat": 40.594117,
+  "lon": -73.960488
+ },
+ {
+  "precinct": 62,
+  "address": "1925 Bath Avenue",
+  "zip": "11214",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/62nd-precinct.page",
+  "geocoded": "1925 BATH AVENUE, Brooklyn, NY, USA",
+  "lat": 40.602519,
+  "lon": -74.003085
+ },
+ {
+  "precinct": 63,
+  "address": "1844 Brooklyn Avenue",
+  "zip": "11210",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/63rd-precinct.page",
+  "geocoded": "1844 BROOKLYN AVENUE, Brooklyn, NY, USA",
+  "lat": 40.627972,
+  "lon": -73.941671
+ },
+ {
+  "precinct": 66,
+  "address": "5822 16th Avenue",
+  "zip": "11204",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/66th-precinct.page",
+  "geocoded": "5822 16 AVENUE, Brooklyn, NY, USA",
+  "lat": 40.625769,
+  "lon": -73.991394
+ },
+ {
+  "precinct": 67,
+  "address": "2820 Snyder Avenue",
+  "zip": "11226",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/67th-precinct.page",
+  "geocoded": "2820 SNYDER AVENUE, Brooklyn, NY, USA",
+  "lat": 40.648657,
+  "lon": -73.950246
+ },
+ {
+  "precinct": 68,
+  "address": "333 65th Street",
+  "zip": "11220",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/68th-precinct.page",
+  "geocoded": "333 65 STREET, Brooklyn, NY, USA",
+  "lat": 40.639101,
+  "lon": -74.022508
+ },
+ {
+  "precinct": 69,
+  "address": "9720 Foster Avenue",
+  "zip": "11236",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/69th-precinct.page",
+  "geocoded": "9720 FOSTER AVENUE, Brooklyn, NY, USA",
+  "lat": 40.648497,
+  "lon": -73.904957
+ },
+ {
+  "precinct": 70,
+  "address": "154 Lawrence Avenue",
+  "zip": "11230",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/70th-precinct.page",
+  "geocoded": "154 LAWRENCE AVENUE, Brooklyn, NY, USA",
+  "lat": 40.630361,
+  "lon": -73.973722
+ },
+ {
+  "precinct": 71,
+  "address": "421 Empire Boulevard",
+  "zip": "11225",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/71st-precinct.page",
+  "geocoded": "421 EMPIRE BOULEVARD, Brooklyn, NY, USA",
+  "lat": 40.664583,
+  "lon": -73.947882
+ },
+ {
+  "precinct": 72,
+  "address": "830 4th Avenue",
+  "zip": "11232",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/72nd-precinct.page",
+  "geocoded": "830 4 AVENUE, Brooklyn, NY, USA",
+  "lat": 40.658199,
+  "lon": -74.001074
+ },
+ {
+  "precinct": 73,
+  "address": "1470 East New York Avenue",
+  "zip": "11212",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/73rd-precinct.page",
+  "geocoded": "1470 EAST NEW YORK AVENUE, Brooklyn, NY, USA",
+  "lat": 40.670837,
+  "lon": -73.913556
+ },
+ {
+  "precinct": 75,
+  "address": "1000 Sutter Avenue",
+  "zip": "11208",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/75th-precinct.page",
+  "geocoded": "1000 SUTTER AVENUE, Brooklyn, NY, USA",
+  "lat": 40.671136,
+  "lon": -73.881449
+ },
+ {
+  "precinct": 76,
+  "address": "191 Union Street",
+  "zip": "11231",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/76th-precinct.page",
+  "geocoded": "191 UNION STREET, Brooklyn, NY, USA",
+  "lat": 40.683856,
+  "lon": -74.000247
+ },
+ {
+  "precinct": 77,
+  "address": "127 Utica Avenue",
+  "zip": "11213",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/77th-precinct.page",
+  "geocoded": "127 UTICA AVENUE, Brooklyn, NY, USA",
+  "lat": 40.674731,
+  "lon": -73.930253
+ },
+ {
+  "precinct": 78,
+  "address": "65 6th Avenue",
+  "zip": "11217",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/78th-precinct.page",
+  "geocoded": "65 6 AVENUE, Brooklyn, NY, USA",
+  "lat": 40.680901,
+  "lon": -73.974145
+ },
+ {
+  "precinct": 79,
+  "address": "263 Tompkins Avenue",
+  "zip": "11216",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/79th-precinct.page",
+  "geocoded": "263 TOMPKINS AVENUE, Brooklyn, NY, USA",
+  "lat": 40.688884,
+  "lon": -73.944612
+ },
+ {
+  "precinct": 81,
+  "address": "30 Ralph Avenue",
+  "zip": "11221",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/81st-precinct.page",
+  "geocoded": "30 RALPH AVENUE, Brooklyn, NY, USA",
+  "lat": 40.689545,
+  "lon": -73.924378
+ },
+ {
+  "precinct": 83,
+  "address": "480 Knickerbocker Avenue",
+  "zip": "11237",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/83rd-precinct.page",
+  "geocoded": "480 KNICKERBOCKER AVENUE, Brooklyn, NY, USA",
+  "lat": 40.698171,
+  "lon": -73.917874
+ },
+ {
+  "precinct": 84,
+  "address": "301 Gold Street",
+  "zip": "11201",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/84th-precinct.page",
+  "geocoded": "301 GOLD STREET, Brooklyn, NY, USA",
+  "lat": 40.695495,
+  "lon": -73.982842
+ },
+ {
+  "precinct": 88,
+  "address": "298 Classon Avenue",
+  "zip": "11205",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/88th-precinct.page",
+  "geocoded": "298 CLASSON AVENUE, Brooklyn, NY, USA",
+  "lat": 40.690091,
+  "lon": -73.960499
+ },
+ {
+  "precinct": 90,
+  "address": "211 Union Avenue",
+  "zip": "11211",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/90th-precinct.page",
+  "geocoded": "211 UNION AVENUE, Brooklyn, NY, USA",
+  "lat": 40.706206,
+  "lon": -73.950798
+ },
+ {
+  "precinct": 94,
+  "address": "100 Meserole Avenue",
+  "zip": "11222",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/94th-precinct.page",
+  "geocoded": "100 MESEROLE AVENUE, Brooklyn, NY, USA",
+  "lat": 40.72671,
+  "lon": -73.953228
+ },
+ {
+  "precinct": 100,
+  "address": "92-24 Rockaway Beach Blvd.",
+  "zip": "11693",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/100th-precinct.page",
+  "geocoded": "92-24 ROCKAWAY BEACH BOULEVARD, Rockaway Beach, NY, USA",
+  "lat": 40.586329,
+  "lon": -73.816517
+ },
+ {
+  "precinct": 101,
+  "address": "16-12 Mott Avenue",
+  "zip": "11691",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/101st-precinct.page",
+  "geocoded": "16-12 MOTT AVENUE, Far Rockaway, NY, USA",
+  "lat": 40.602913,
+  "lon": -73.749965
+ },
+ {
+  "precinct": 102,
+  "address": "87-34 118th Street",
+  "zip": "11418",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/102nd-precinct.page",
+  "geocoded": "87-34 118 STREET, Richmond Hill, NY, USA",
+  "lat": 40.698713,
+  "lon": -73.831574
+ },
+ {
+  "precinct": 103,
+  "address": "168-02 91st Ave",
+  "zip": "11432",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/103rd-precinct.page",
+  "geocoded": "168-02 91 AVENUE, Jamaica, NY, USA",
+  "lat": 40.707081,
+  "lon": -73.792637
+ },
+ {
+  "precinct": 104,
+  "address": "64-2 Catalpa Ave.",
+  "zip": "11385",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/104th-precinct.page",
+  "geocoded": "64-02 CATALPA AVENUE, Fresh Pond, NY, USA",
+  "lat": 40.704278,
+  "lon": -73.893611
+ },
+ {
+  "precinct": 105,
+  "address": "92-08 222nd Street",
+  "zip": "11428",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/105th-precinct.page",
+  "geocoded": "92-08 222 STREET, Queens Village, NY, USA",
+  "lat": 40.72622,
+  "lon": -73.735156
+ },
+ {
+  "precinct": 106,
+  "address": "103-53 101st Street",
+  "zip": "11417",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/106th-precinct.page",
+  "geocoded": "103-53 101 STREET, Ozone Park, NY, USA",
+  "lat": 40.682207,
+  "lon": -73.839751
+ },
+ {
+  "precinct": 107,
+  "address": "71-01 Parsons Blvd.",
+  "zip": "11365",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/107th-precinct.page",
+  "geocoded": "71-01 PARSONS BOULEVARD, Flushing, NY, USA",
+  "lat": 40.730025,
+  "lon": -73.810623
+ },
+ {
+  "precinct": 108,
+  "address": "5-47 50th Ave.",
+  "zip": "11101",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/108th-precinct.page",
+  "geocoded": "5-47 50 AVENUE, Long Island City, NY, USA",
+  "lat": 40.743056,
+  "lon": -73.954743
+ },
+ {
+  "precinct": 109,
+  "address": "37-05 Union Street",
+  "zip": "11354",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/109th-precinct.page",
+  "geocoded": "37-05 UNION STREET, Flushing, NY, USA",
+  "lat": 40.762358,
+  "lon": -73.827021
+ },
+ {
+  "precinct": 110,
+  "address": "94-41 43rd Ave.",
+  "zip": "11373",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/110th-precinct.page",
+  "geocoded": "94-41 43 AVENUE, Elmhurst, NY, USA",
+  "lat": 40.745245,
+  "lon": -73.87008
+ },
+ {
+  "precinct": 111,
+  "address": "45-06 215th Street",
+  "zip": "11361",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/111th-precinct.page",
+  "geocoded": "45-06 215 STREET, Bayside, NY, USA",
+  "lat": 40.760216,
+  "lon": -73.767749
+ },
+ {
+  "precinct": 112,
+  "address": "68-40 Austin Street",
+  "zip": "11375",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/112th-precinct.page",
+  "geocoded": "68-40 AUSTIN STREET, Forest Hills, NY, USA",
+  "lat": 40.722254,
+  "lon": -73.851116
+ },
+ {
+  "precinct": 113,
+  "address": "167-02 Baisley Blvd.",
+  "zip": "11434",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/113th-precinct.page",
+  "geocoded": "167-02 BAISLEY BOULEVARD, Jamaica, NY, USA",
+  "lat": 40.679787,
+  "lon": -73.775737
+ },
+ {
+  "precinct": 114,
+  "address": "34-16 Astoria Blvd.",
+  "zip": "11103",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/114th-precinct.page",
+  "geocoded": "34-16 ASTORIA BOULEVARD, Astoria, NY, USA",
+  "lat": 40.76928,
+  "lon": -73.915326
+ },
+ {
+  "precinct": 115,
+  "address": "92-15 Northern Blvd.",
+  "zip": "11372",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/115th-precinct.page",
+  "geocoded": "92-15 NORTHERN BOULEVARD, East Elmhurst, NY, USA",
+  "lat": 40.756852,
+  "lon": -73.875534
+ },
+ {
+  "precinct": 116,
+  "address": "244-04 North Conduit Avenue",
+  "zip": "11422",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/116th-precinct.page",
+  "geocoded": "244-04 NORTH CONDUIT AVENUE, Rosedale, NY, USA",
+  "lat": 40.66629,
+  "lon": -73.734736
+ },
+ {
+  "precinct": 120,
+  "address": "78 Richmond Terrace",
+  "zip": "10301",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/120th-precinct.page",
+  "geocoded": "78 RICHMOND TERRACE, Staten Island, NY, USA",
+  "lat": 40.644644,
+  "lon": -74.077464
+ },
+ {
+  "precinct": 121,
+  "address": "970 Richmond Avenue",
+  "zip": "10314",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/121st-precinct.page",
+  "geocoded": "970 RICHMOND AVENUE, Staten Island, NY, USA",
+  "lat": 40.623608,
+  "lon": -74.150165
+ },
+ {
+  "precinct": 122,
+  "address": "2320 Hylan Blvd.",
+  "zip": "10306",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/122nd-precinct.page",
+  "geocoded": "2320 HYLAN BOULEVARD, Staten Island, NY, USA",
+  "lat": 40.574144,
+  "lon": -74.105493
+ },
+ {
+  "precinct": 123,
+  "address": "116 Main Street",
+  "zip": "10307",
+  "page": "https://www.nyc.gov/site/nypd/bureaus/patrol/precincts/123rd-precinct.page",
+  "geocoded": "116 MAIN STREET, Staten Island, NY, USA",
+  "lat": 40.511853,
+  "lon": -74.249979
+ }
+]
