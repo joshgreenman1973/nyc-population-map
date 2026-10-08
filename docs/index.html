@@ -280,23 +280,31 @@
   .biv-cap { font-size: 10.5px; color: var(--ink-2); margin-bottom: 4px; line-height: 1.3; }
   .biv-cap b { color: var(--ink); }
   .biv-row { display: flex; align-items: stretch; gap: 6px; }
-  .biv-yrange {
-    display: flex; flex-direction: column; justify-content: space-between;
-    width: 56px;
+  /* Tick labels sit on the cut points between thirds (absolutely positioned). */
+  .biv-yrange, #biv-map-legend .ml-yrange {
+    position: relative;
+    width: 56px; flex: 0 0 56px;
     font-size: 10px; color: var(--muted);
-    text-align: right; font-variant-numeric: tabular-nums;
-    padding: 1px 0;
+    font-variant-numeric: tabular-nums;
   }
+  .biv-yrange span, #biv-map-legend .ml-yrange span {
+    position: absolute; right: 0; transform: translateY(-50%); white-space: nowrap;
+  }
+  .biv-xrange span, #biv-map-legend .ml-xrange span {
+    position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap;
+  }
+  .biv-thirds { font-size: 10.5px; color: var(--ink-2); margin-top: 6px; line-height: 1.4; font-variant-numeric: tabular-nums; }
+  .biv-thirds b { color: var(--ink); font-weight: 600; }
   .biv-swatches { border-collapse: collapse; flex: 0 0 auto; }
   .biv-swatches td {
-    width: 24px; height: 24px;
+    width: 28px; height: 28px;
     border: 1px solid rgba(0,0,0,0.04);
     padding: 0;
   }
   .biv-xrow { margin-top: 3px; padding-left: 62px; }
   .biv-xrange {
-    display: flex; justify-content: space-between;
-    width: 78px;
+    position: relative; height: 13px;
+    width: 90px;
     font-size: 10px; color: var(--muted);
     font-variant-numeric: tabular-nums;
   }
@@ -579,13 +587,7 @@
   }
   #biv-map-legend .ml-cap b { color: var(--ink); }
   #biv-map-legend .ml-row { display: flex; align-items: stretch; gap: 6px; }
-  #biv-map-legend .ml-yrange {
-    display: flex; flex-direction: column; justify-content: space-between;
-    width: 56px;
-    font-size: 10.5px; color: var(--muted);
-    text-align: right; font-variant-numeric: tabular-nums;
-    padding: 1px 0;
-  }
+
   #biv-map-legend table { border-collapse: collapse; flex: 0 0 auto; }
   #biv-map-legend td {
     width: 28px; height: 28px;
@@ -596,7 +598,7 @@
     margin-top: 3px; padding-left: 62px;
   }
   #biv-map-legend .ml-xrange {
-    display: flex; justify-content: space-between;
+    position: relative; height: 14px;
     width: 90px;
     font-size: 10.5px; color: var(--muted);
     font-variant-numeric: tabular-nums;
@@ -648,14 +650,14 @@
 <div id="app">
   <aside id="sidebar">
     <h1>New York City population explorer</h1>
-    <div class="sub">Every census tract in the five boroughs, colored by the variables you choose. One variable, or two at once.</div>
+    <div class="sub">Every neighborhood (or census tract) in the five boroughs, colored by the variables you choose. One variable, or two at once.</div>
 
     <div id="mode-toggle">
       <button data-mode="single" class="active">Single variable</button>
       <button data-mode="bivariate">Two variables</button>
     </div>
 
-    <div id="geo-toggle" title="Aggregating up reduces noise. Combining ~9 tracts into one NTA cuts a typical margin of error by roughly 3×, turning many 'unreliable' tract estimates into reliable neighborhood ones.">
+    <div id="geo-toggle" title="Neighborhoods are City Planning's Neighborhood Tabulation Areas, each built from about nine census tracts. Combining tracts cuts a typical relative margin of error to roughly a third, turning many shaky tract estimates into reliable neighborhood ones.">
       <span class="geo-label">Geography:</span>
       <button data-geo="nta" class="active">Neighborhood</button>
       <button data-geo="tract">Tract</button>
@@ -717,7 +719,7 @@
     </div>
 
     <div id="footer">
-      Data: <a href="https://api.censusreporter.org" target="_blank" rel="noopener">Census Reporter</a> mirror of the U.S. Census Bureau American Community Survey 5-year (<span id="release-name">2020–2024</span>). Crime rates from <a href="https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Historic/qgea-i56i" target="_blank" rel="noopener">NYPD complaint data</a>, rolling 12 months ending <span id="crime-window-end">—</span>. Tract geometry from <a href="https://www.nyc.gov/site/planning/data-maps/open-data.page" target="_blank" rel="noopener">NYC DCP</a>, shoreline-clipped 2020 vintage. Missing values shown in gray.
+      Data: <a href="https://api.censusreporter.org" target="_blank" rel="noopener">Census Reporter</a> mirror of the U.S. Census Bureau American Community Survey 5-year (<span id="release-name">2020–2024</span>). Crime rates from NYPD complaint data (<a href="https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Historic/qgea-i56i" target="_blank" rel="noopener">historic</a> and <a href="https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Current-Year-To-Date-/5uac-w243" target="_blank" rel="noopener">year to date</a>), rolling 12 months ending <span id="crime-window-end">—</span>. Tract geometry from <a href="https://www.nyc.gov/site/planning/data-maps/open-data.page" target="_blank" rel="noopener">NYC DCP</a>, shoreline-clipped 2020 vintage. Missing values are dark gray; parks, cemeteries, airports, bases and jails are pale.
       <div style="margin-top:8px">
         <a href="methodology.html">Methodology</a> ·
         <a href="https://github.com/joshgreenman1973/nyc-population-map" target="_blank" rel="noopener">Source</a> ·
@@ -762,7 +764,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <!-- Load d3 as a single bundle so dependency-resolution order can't go wrong. -->
-<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script>
 // ===== formatting =====
 const fmtInt = d3.format(",.0f");
@@ -781,6 +783,30 @@ function fmtValue(val, fmt) {
     default: return String(val);
   }
 }
+// Medians the Census Bureau top- or bottom-codes (or that land in an open-ended
+// bracket when we interpolate a neighborhood median) carry a "<key>_coded" flag.
+// The stored number is the threshold, so print "$250,000+" or "under $10,000".
+function fmtProp(props, key, fmt) {
+  const s = fmtValue(props[key], fmt);
+  const coded = props[key + "_coded"];
+  if (coded === "top") return s + "+";
+  if (coded === "bottom") return "under " + s;
+  return s;
+}
+// Short dollar/percent labels for legend ticks and axes.
+function fmtShort(v, fmt) {
+  if (v == null || !isFinite(v)) return "";
+  if (fmt === "usd") {
+    if (Math.abs(v) >= 1e6) return "$" + d3.format(".2~f")(v / 1e6) + "M";
+    if (Math.abs(v) >= 1000) return "$" + d3.format(",.0f")(Math.round(v / 1000)) + "k";
+    return "$" + Math.round(v);
+  }
+  if (fmt === "pct") return (Math.abs(v) < 10 ? d3.format(".1f")(v) : Math.round(v)) + "%";
+  if (fmt === "int") return d3.format(",.0f")(v);
+  if (Math.abs(v) >= 1000) return d3.format(",.0f")(v);
+  return d3.format(".1f")(v);
+}
+const unitWord = () => geoLevel === "nta" ? "neighborhoods" : "tracts";
 
 // ===== state =====
 let VARS = [];
@@ -873,42 +899,44 @@ const BIV_PALETTE = [
 function bivCell(xb, yb) { return BIV_PALETTE[yb][xb]; }
 
 // ===== bivariate presets =====
+// Corner names follow the legend: x runs left (low) to right (high), y runs bottom
+// (low) to top (high). Each story names its corners in plain terms and was checked
+// against the neighborhood data (Oct. 2026 build); the places named sit in the cells
+// described at the neighborhood level. Directions hold at the tract level too, but the
+// relationships are weaker there.
 const PRESETS = [
   { x: "pct_poverty",        y: "crime_violent_rate",  name: "Poverty × violent crime",
-    story: "The classic disadvantage-and-crime overlap. The upper-right is where high poverty rates and high violent-crime rates compound. Tracts on the lower diagonal — high poverty but low violent crime, or low poverty but elevated violent crime — are the ones that complicate the simple story." },
+    story: "Poorer neighborhoods tend to have more violent crime per resident. The upper-right (high poverty, high violent crime) is mostly the Bronx, Harlem, East Harlem and central Brooklyn. The two opposite corners are short lists. The upper-left (low poverty, high violent crime) is mostly commercial Manhattan, such as Midtown, SoHo and Tribeca, where the rate counts crimes against workers and visitors but divides by residents only. The lower-right (high poverty, low violent crime) is Borough Park, South Williamsburg, Midwood and Gravesend." },
 
-  // Kept presets (7) — each carries a distinct story.
   { x: "pct_bachelor_plus",  y: "pct_wfh",             name: "Education × work-from-home",
-    story: "The laptop-class geography. The upper-right tracts are where a degree and a home office overlap; the lower-right are college-degreed but back at the office." },
-  { x: "median_gross_rent",  y: "rs_share_of_renters", name: "Market rent × rent-stabilized share",
-    story: "Does rent stabilization track with cheap or expensive neighborhoods? The upper-left would mean yes — high stabilization where market rents are low (most of the Bronx, northern Manhattan). The upper-right is the contradiction: stabilized buildings still in expensive tracts (Stuy Town, prewar Upper West/East Side). The lower-right is the unregulated luxury map." },
+    story: "Working from home tracks college degrees closely. At the neighborhood level the two opposite corners are empty: no neighborhood pairs a high degree share with a low work-from-home share, or the reverse. The upper-right (high on both) is mostly Manhattan and brownstone Brooklyn, plus Forest Hills, Bay Ridge and Astoria." },
+  { x: "median_gross_rent",  y: "rs_share_of_renters", name: "Median rent × rent-stabilized share",
+    story: "Rent stabilization barely tracks rent levels. The upper-left (low rent, high stabilized share) is mostly the Bronx, with Harlem and Washington Heights. The upper-right (high rent, high stabilized share) includes Stuyvesant Town, which is entirely stabilized, and newer high-rise areas like Long Island City, Downtown Brooklyn, Williamsburg and Hell's Kitchen. Apartments in buildings that got the 421-a property tax break are stabilized, so a stabilized unit can rent near market rate. The lower-right (high rent, low stabilized share) runs from the Upper East Side to eastern Queens and Staten Island. Median gross rent covers every renter, stabilized or not, so it is not a measure of asking rents." },
   { x: "median_hh_income",   y: "median_rent_burden",  name: "Income × rent burden",
-    story: "The real housing-stress map. The upper-left is the worst-off: high rent burden in low-income tracts. The upper-right is the 'house-rich-but-cash-stretched' cell — high incomes where rent still eats a large share. The lower-right is the comfortable corner; the lower-left is the cheap-rent-for-low-incomes pocket." },
+    story: "Renters in lower-income neighborhoods spend more of their income on rent. The upper-left (low income, high burden) is mostly the Bronx, plus Washington Heights, Corona, Flushing and Borough Park. The lower-right (high income, low burden) is much of Manhattan, brownstone Brooklyn and Forest Hills. The upper-right (high income, high burden) is a handful of homeowner areas in eastern Queens and Staten Island, such as Queens Village, Rosedale and Annadale. Median income there covers owners and renters, while rent burden covers renters only, so the two measures describe different households." },
   { x: "pct_foreign_born",   y: "pres_d_shift_2020_2024", name: "Foreign-born × D shift, 2020→2024",
-    story: "Immigrant tracts famously moved toward Trump from 2020 to 2024. This shows where. Top half = D gain (rare); bottom half = R gain. The right column is high-foreign-born tracts — if the lower-right is the densest, immigrant neighborhoods shifted hardest." },
+    story: "Almost every neighborhood moved toward Trump between 2020 and 2024; South Williamsburg is the only one that moved toward the Democrats, by less than a point. So the vertical axis sorts small Republican shifts (top) from large ones (bottom). The lower-right (high foreign-born share, largest shift) is mostly Queens, including Elmhurst, Jackson Heights, Corona, Flushing and South Ozone Park, plus Bensonhurst and Washington Heights. Two corners break the pattern. The lower-left (fewer immigrants, large shift) is the South Bronx: Mott Haven, Melrose, Longwood and Morrisania. The upper-right (many immigrants, small shift) is East Flatbush, Canarsie and Forest Hills." },
   { x: "pop_density",        y: "median_home_value",   name: "Density × home value",
-    story: "Where dense doesn't mean cheap — and where it does. Upper-right is high-density, high-value (the Manhattan/brownstone-Brooklyn pattern); upper-left is dense but lower-value outer-borough rental stock." },
+    story: "Density and home value are only loosely related. The upper-right (dense, high value) is Manhattan and brownstone Brooklyn, including Bedford-Stuyvesant, Crown Heights and Borough Park. The lower-right (dense, lower value) is mostly the Bronx, with Washington Heights, East Harlem and Jackson Heights. The upper-left (less dense, high value) includes Bayside, Middle Village, Astoria (North) and Carroll Gardens. Home value is the owner's own estimate and covers owner-occupied homes only, so in renter-heavy areas it describes a minority of households." },
   { x: "pct_bachelor_plus",  y: "pct_under18",         name: "Education × kids",
-    story: "Where do the college-educated parents actually live? The conventional wisdom says professionals don't have kids in the city. The upper-right tracts are the counterexamples — neighborhoods where both college degrees and children are concentrated." },
+    story: "Neighborhoods with more college graduates have fewer children. The upper-left (fewer degrees, more children) is mostly the Bronx, plus Borough Park, Corona and Brownsville. The lower-right (more degrees, fewer children) is much of Manhattan and brownstone Brooklyn. The upper-right, where both run high, is a short list: Bedford-Stuyvesant (West), Midwood, Kensington and Kew Gardens Hills, plus Annadale and Todt Hill on Staten Island." },
   { x: "median_hh_income",   y: "pct_public_transit",  name: "Income × transit commute",
-    story: "Transit-rich-and-rich (Manhattan core) shows up in the upper right; transit-dependent low income in the upper left; the lower-right is car-leaning higher-income outer borough." },
+    story: "Higher-income neighborhoods have lower transit shares, for two different reasons. The lower-right (high income, low transit share) mixes car-dependent Staten Island and eastern Queens with Manhattan neighborhoods like Chelsea, Hell's Kitchen, Murray Hill and the Upper East Side, where roughly a fifth to a third of workers walk and a quarter to a third work from home. The upper-left (low income, high transit share) is mostly the Bronx, Harlem, East Harlem and Washington Heights. The upper-right (high income, high transit share) has only a few members, such as Long Island City, Astoria and Manhattan Valley." },
 
-  // New presets (8) — voting, crime, immigrant households, digital divide,
-  // school opt-out, the two-NYCs density map, and the NYC-flipped walking signal.
   { x: "pct_owner_occupied", y: "mayor_2025_mamdani_pct", name: "Owner-occupied × Mamdani 2025",
-    story: "Mamdani's 2025 coalition against the homeownership map. The upper-left is the renter-Mamdani base — dense tracts where ownership is rare and his support ran highest. The lower-right is the inverse: homeowner-heavy tracts (Staten Island, southeast Queens, parts of south Brooklyn) that resisted him. The upper-right is the surprise cell — homeowners who still went for Mamdani." },
+    story: "Mamdani ran best where most people rent. The upper-left (few owners, high Mamdani share) includes Bedford-Stuyvesant, Crown Heights, Harlem, Washington Heights, the East Village and Ridgewood. The lower-right (many owners, low Mamdani share) is Staten Island, Forest Hills and much of northeastern Queens, plus Riverdale, Throgs Neck and Sheepshead Bay. Southeast Queens breaks the pattern: Cambria Heights, Laurelton, St. Albans and Queens Village are 72 to 85 percent owner-occupied and gave him 55 to 59 percent of the three-way vote, which puts them in the middle-right cell. The upper-right (many owners, high Mamdani share) includes Canarsie, East Flatbush, South Jamaica and Brooklyn Heights." },
   { x: "crime_property_rate", y: "median_gross_rent",  name: "Property crime × median rent",
-    story: "Property crime isn't just a low-rent phenomenon. The upper-right is high rents with high property-crime rates — the foot-traffic, retail-heavy commercial corridors (Manhattan core, downtown Brooklyn) where grand larceny accumulates. The upper-left is the cheaper-rent, high-property-crime pattern; the lower half is comparatively quiet." },
+    story: "Property crime per resident tends to run higher where rents are higher, though the link is weak. The upper-right (high property crime, high rent) is mostly Manhattan, from the Upper West Side and Chelsea to Murray Hill, plus Williamsburg and Long Island City. The rate counts crimes against shoppers, commuters and visitors but divides by residents only. The lower-right (high property crime, low rent) is mostly the Bronx. The lower-left (low property crime, low rent) includes Canarsie, East New York, South Jamaica, the Rockaways and parts of Staten Island." },
   { x: "pct_non_english_home", y: "avg_hh_size",       name: "Non-English at home × household size",
-    story: "The multigenerational immigrant-household geography. The upper-right is where both signals concentrate — non-English-speaking households living several to a unit (Sunset Park, Jackson Heights, parts of the Bronx). The lower-left is the small-household, English-speaking pattern. The lower-right is the language-isolated but small-household exception." },
+    story: "Households tend to be larger where more people speak another language at home. The upper-right (high on both) includes Elmhurst, Corona, Jamaica, Bensonhurst, Gravesend, Borough Park and Sunset Park. The lower-left (mostly English, smaller households) is much of Manhattan and northern Brooklyn. The upper-left (mostly English, larger households) is southeast Queens, Canarsie, the Rockaways and Staten Island. The lower-right (other languages, smaller households) includes Chinatown, Flushing, Sheepshead Bay and the Concourse." },
   { x: "pct_no_internet",    y: "median_hh_income",    name: "No home internet × income",
-    story: "The digital divide tracks income, not age. The upper-left is the core pattern: low-income tracts where a meaningful share of households have no internet at home. The upper-right is the rarer cell — high-income tracts with measurable no-home-internet shares, often senior-heavy. The lower half is the connected city. (Members of no-home-internet households may still get online at work, school, or via a phone plan billed elsewhere — the measure is the residence.)" },
+    story: "Households without internet at home are concentrated in lower-income neighborhoods. Across neighborhoods, the no-internet share correlates with median income at about −0.6 and with the share of residents 65 and older at about −0.1. The lower-right (high no-internet share, low income) is mostly the Bronx, plus Harlem, Washington Heights and Borough Park. The upper-left (low share, high income) is much of Manhattan, brownstone Brooklyn, Forest Hills and parts of Staten Island. People in these households may still get online at work, at school or on a phone plan; the measure is access at the residence." },
   { x: "pct_kids_public_k12", y: "pct_bachelor_plus",  name: "Public-school kids × Bachelor's-plus",
-    story: "Where the highly educated opt out of the public-school system. The lower-right is the tell: high college-degreed share but low share of K-12 kids in public school (Upper East Side, brownstone Brooklyn, parts of lower Manhattan). The upper-left is the inverse — less-educated tracts where public school is near-universal. The upper-right is the public-school-and-degree overlap." },
+    story: "Where more adults have degrees, a smaller share of children attend public school. The upper-left (low public-school share, high degree share) is much of Manhattan and brownstone Brooklyn, including the Upper West and Upper East Sides, Bay Ridge and Bedford-Stuyvesant (West). The lower-right (high public-school share, lower degree share) is most of the Bronx and much of Queens. The lower-left (low public-school share, lower degree share) includes Borough Park, South Williamsburg and Far Rockaway; the census counts religious schools as private. The upper-right (high on both) is a short list: Astoria, Sunnyside, the Lower East Side and Oakland Gardens." },
   { x: "pop_density",        y: "pct_owner_occupied",  name: "Density × owner-occupied",
-    story: "The cleanest 'two NYCs' map. The upper-left is the dense renter city — Manhattan, the brownstone-Brooklyn core, west Bronx. The lower-right is the low-density homeowner city — Staten Island, southeast Queens, the outer edges. The diagonal is the structural divide that almost every other NYC story rides on." },
+    story: "Homeownership falls as density rises. The upper-left (low density, mostly owners) is Staten Island and most of eastern and southern Queens. The lower-right (dense, mostly renters) is the Bronx, Manhattan and central Brooklyn. The upper-right (dense and owner-heavy) is three neighborhoods, Carnegie Hill, Turtle Bay and Brooklyn Heights; the census counts co-op and condo owners as homeowners." },
   { x: "pct_walked",         y: "median_gross_rent",   name: "Walked to work × median rent",
-    story: "In NYC, walking is a wealth signal — the opposite of the national pattern. The upper-right is the high-rent, high-walking cell: the Manhattan core and adjacent Brooklyn, where the highest rents buy the shortest commutes on foot. The lower half is the commute-by-train-or-car city." },
+    story: "Neighborhoods where more people walk to work tend to have higher rents. The upper-right (more walking, high rent) is mostly Manhattan, plus Brooklyn Heights, Fort Greene, Clinton Hill and Carroll Gardens. The lower-right (more walking, lower rent) includes Washington Heights, East Harlem, Mott Haven, Coney Island and Far Rockaway. The upper-left (little walking, high rent) is mostly Queens, including Bayside, Middle Village, Maspeth and Auburndale." },
 ];
 
 // ===== single-variable color scale =====
@@ -919,12 +947,20 @@ function buildScale(varMeta) {
   if (!values.length) return null;
   const palette = paletteFor(varMeta);
   if (scaleMode === "quantile") {
-    const N = 7;
     const sorted = values.slice().sort(d3.ascending);
+    // Seven quantile classes. Skewed variables (lots of zeros, top-coded medians)
+    // produce repeated cut points; drop the repeats so no class is empty, and put a
+    // value that sits exactly on a cut point in the class below it, so a long run of
+    // zeros lands in the lowest class rather than the second one.
     const breaks = [];
-    for (let i = 1; i < N; i++) breaks.push(d3.quantileSorted(sorted, i / N));
-    const scale = d3.scaleThreshold().domain(breaks).range(d3.range(N).map(i => palette((i + 0.5) / N)));
-    scale.kind = "quantile"; scale.breaks = breaks; scale.N = N; scale.values = values;
+    for (let i = 1; i < 7; i++) {
+      const q = d3.quantileSorted(sorted, i / 7);
+      if (q < sorted[sorted.length - 1] && (!breaks.length || q > breaks[breaks.length - 1])) breaks.push(q);
+    }
+    const N = breaks.length + 1;
+    const colors = d3.range(N).map(i => palette((i + 0.5) / N));
+    const scale = v => colors[d3.bisectLeft(breaks, v)];
+    scale.kind = "quantile"; scale.breaks = breaks; scale.N = N; scale.colors = colors; scale.values = values;
     return scale;
   }
   const [lo, hi] = d3.extent(values);
@@ -934,21 +970,33 @@ function buildScale(varMeta) {
 }
 
 // ===== bivariate binning =====
+// Terciles are computed over the areas that have BOTH values — the ones actually
+// colored — so each third really holds a third of what's on the map. A value equal to
+// a cut point goes in the lower third, so a pile of identical low values (zeros) stays
+// "low" instead of being pushed into the middle.
+let bivN = 0;
 function bin3(values) {
-  const sorted = values.filter(v => v != null && isFinite(v)).slice().sort(d3.ascending);
+  const sorted = values.slice().sort(d3.ascending);
   const q1 = d3.quantileSorted(sorted, 1/3);
   const q2 = d3.quantileSorted(sorted, 2/3);
-  return v => {
+  const f = v => {
     if (v == null || !isFinite(v)) return null;
-    if (v < q1) return 0;
-    if (v < q2) return 1;
+    if (v <= q1) return 0;
+    if (v <= q2) return 1;
     return 2;
   };
+  f.q1 = q1; f.q2 = q2; f.min = sorted[0]; f.max = sorted[sorted.length - 1];
+  return f;
 }
+const hasVal = v => v != null && isFinite(v);
 function rebuildBivBins() {
-  binX = bin3(GEO.features.map(f => f.properties[xKey]));
-  binY = bin3(GEO.features.map(f => f.properties[yKey]));
+  const paired = GEO.features.map(f => f.properties).filter(p => hasVal(p[xKey]) && hasVal(p[yKey]));
+  bivN = paired.length;
+  if (!bivN) { binX = binY = () => null; return; }
+  binX = bin3(paired.map(p => p[xKey]));
+  binY = bin3(paired.map(p => p[yKey]));
 }
+const THIRD_WORD = ["low", "middle", "high"];
 
 // ===== styling =====
 function fadeFor(props, keys) {
@@ -959,11 +1007,15 @@ function fadeFor(props, keys) {
   }
   return false;
 }
+// Parks, cemeteries, airports, bases and jails (DCP's non-residential NTAs and the tracts
+// inside them) carry counts but no shares, medians or rates. Draw them paler than
+// "no data" so the reader can tell "not a neighborhood" from "missing".
+const NODATA_STYLE = { fillColor: "#dcd9cf", color: "#bdbab0", weight: 0.3, fillOpacity: 0.7, dashArray: null };
+const NONRES_STYLE = { fillColor: "#f3f1ea", color: "#d8d4c8", weight: 0.3, fillOpacity: 0.85, dashArray: null };
+function missingStyle(props) { return props.non_residential ? NONRES_STYLE : NODATA_STYLE; }
 function styleSingle(props) {
   const v = props[currentKey];
-  if (v == null || !isFinite(v) || !currentScale) {
-    return { fillColor: "#dcd9cf", color: "#bdbab0", weight: 0.3, fillOpacity: 0.7 };
-  }
+  if (v == null || !isFinite(v) || !currentScale) return missingStyle(props);
   const fade = fadeFor(props, [currentKey]);
   return {
     fillColor: currentScale(v),
@@ -976,9 +1028,7 @@ function styleSingle(props) {
 function styleBiv(props) {
   const bx = binX(props[xKey]);
   const by = binY(props[yKey]);
-  if (bx == null || by == null) {
-    return { fillColor: "#dcd9cf", color: "#bdbab0", weight: 0.3, fillOpacity: 0.7 };
-  }
+  if (bx == null || by == null) return missingStyle(props);
   const fade = fadeFor(props, [xKey, yKey]);
   return {
     fillColor: bivCell(bx, by),
@@ -1022,8 +1072,12 @@ function pctileLine(props, key) {
   const v = props[key];
   const p = percentileFor(v, key);
   if (p == null) return "";
-  const unit = (geoLevel === "nta") ? "NTAs" : "tracts";
-  return `<div class="moe-line">Higher than ${p}% of ${unit}</div>`;
+  return `<div class="moe-line">Higher than ${p}% of ${unitWord()}</div>`;
+}
+function nonresNote(props) {
+  if (!props.non_residential) return "";
+  const pop = props.pop_total ? ` The survey counts ${fmtInt(props.pop_total)} residents here.` : "";
+  return `<div class="moe-line">Park, cemetery, airport, military base or jail, as classified by City Planning. Counts are shown; shares, medians and rates are not.${pop}</div>`;
 }
 
 // Pearson correlation for two variables across all features (tracts/NTAs).
@@ -1067,71 +1121,85 @@ function renderCitySummary() {
     const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
     const median = d3.quantileSorted(sorted, 0.5);
     const lo = sorted[0], hi = sorted[sorted.length - 1];
-    const unit = (geoLevel === "nta") ? "NTAs" : "tracts";
+    const unit = unitWord();
+    const hiStr = fmtValue(hi, meta.fmt) + (topIsCoded(currentKey, hi) ? "+" : "");
+    // These summarize the areas on the map, each counted once regardless of size —
+    // they are not citywide figures.
     el.innerHTML = `
-      <div class="cs-row"><span class="cs-label">${unit} with data</span><span class="cs-value">${vals.length.toLocaleString()}</span></div>
-      <div class="cs-row"><span class="cs-label">Min</span><span class="cs-value">${fmtValue(lo, meta.fmt)}</span></div>
-      <div class="cs-row"><span class="cs-label">Median</span><span class="cs-value">${fmtValue(median, meta.fmt)}</span></div>
-      <div class="cs-row"><span class="cs-label">Mean</span><span class="cs-value">${fmtValue(mean, meta.fmt)}</span></div>
-      <div class="cs-row"><span class="cs-label">Max</span><span class="cs-value">${fmtValue(hi, meta.fmt)}</span></div>`;
+      <div class="cs-row"><span class="cs-label">${unit[0].toUpperCase() + unit.slice(1)} with data</span><span class="cs-value">${vals.length.toLocaleString()}</span></div>
+      <div class="cs-row"><span class="cs-label">Lowest</span><span class="cs-value">${fmtValue(lo, meta.fmt)}</span></div>
+      <div class="cs-row"><span class="cs-label">Middle ${unit === "tracts" ? "tract" : "neighborhood"}</span><span class="cs-value">${fmtValue(median, meta.fmt)}</span></div>
+      <div class="cs-row"><span class="cs-label">Average of ${unit}</span><span class="cs-value">${fmtValue(mean, meta.fmt)}</span></div>
+      <div class="cs-row"><span class="cs-label">Highest</span><span class="cs-value">${hiStr}</span></div>
+      <div class="cs-row"><span class="cs-label" style="font-size:10.5px">Each ${unit === "tracts" ? "tract" : "neighborhood"} counts once regardless of size, so these are not citywide figures.</span></div>`;
   } else {
     const c = pearsonCorr(xKey, yKey);
     if (!c) { el.innerHTML = ""; return; }
     const sign = c.r >= 0 ? "+" : "−";
     el.innerHTML = `
       <div class="cs-corr">Correlation: ${sign}${Math.abs(c.r).toFixed(2)}
-        <span class="cs-corr-strength">(${corrStrengthLabel(c.r)}, n = ${c.n.toLocaleString()})</span></div>`;
+        <span class="cs-corr-strength">(${corrStrengthLabel(c.r)}, across ${c.n.toLocaleString()} ${unitWord()})</span></div>`;
   }
 }
 function crimeCaveat(props, key) {
   // Only relevant when the active variable is a crime-rate variable.
   if (!key || !key.startsWith("crime_") || !key.endsWith("_rate")) return "";
-  if (props.non_residential) {
-    return `<div class="moe-line" style="color:#8a2a17">Non-residential area (park, cemetery, airport) — rate suppressed because the residents-based denominator is meaningless here.</div>`;
-  }
   if (props.crime_commercial_daytime) {
     return `<div class="moe-line" style="color:#7d6112">Heavy daytime / tourist area — the rate is per <em>resident</em>, but most incidents involve commuters or visitors, not residents. Treat as systematically inflated.</div>`;
   }
   return "";
 }
+function placeLabel(props) {
+  return (geoLevel === "nta") ? (props.nta || "") : `${props.borough || ""} · Tract ${props.ct_label || props.geoid}`;
+}
+function placeSub(props) {
+  const n = props.nta_tract_count;
+  return (geoLevel === "nta") ? `${props.borough || ""} · ${n} ${n === 1 ? "tract" : "tracts"}` : (props.nta || "");
+}
 function tooltipHtml(props) {
   if (mode === "single") {
     const meta = metaOf(currentKey);
-    const val = props[currentKey];
-    const valStr = fmtValue(val, meta.fmt);
+    const valStr = fmtProp(props, currentKey, meta.fmt);
     const units = meta.units && meta.fmt !== "usd" && meta.fmt !== "pct" ? `<span class="units">${meta.units}</span>` : "";
-    const label = (geoLevel === "nta") ? (props.nta || "") : `${props.borough || ""} · Tract ${props.ct_label || props.geoid}`;
-    const sub = (geoLevel === "nta") ? `${props.borough || ""} · ${props.nta_tract_count || ""} tracts` : (props.nta || "");
     return `<div class="tract-tooltip">
-      <div class="ttl">${label}</div>
-      <div class="nta">${sub}</div>
+      <div class="ttl">${placeLabel(props)}</div>
+      <div class="nta">${placeSub(props)}</div>
       <div><span class="val">${valStr}</span>${units}</div>
       ${moeLine(props, currentKey, meta)}
       ${pctileLine(props, currentKey)}
       ${crimeCaveat(props, currentKey)}
+      ${nonresNote(props)}
     </div>`;
   } else {
     const mx = metaOf(xKey), my = metaOf(yKey);
-    const xMoe = props[xKey + "_moe"], yMoe = props[yKey + "_moe"];
-    const xMoeStr = xMoe != null ? ` <span style="color:var(--muted);font-weight:400;font-size:11px">± ${fmtValue(xMoe, mx.fmt)}</span>` : "";
-    const yMoeStr = yMoe != null ? ` <span style="color:var(--muted);font-weight:400;font-size:11px">± ${fmtValue(yMoe, my.fmt)}</span>` : "";
-    const label = (geoLevel === "nta") ? (props.nta || "") : `${props.borough || ""} · Tract ${props.ct_label || props.geoid}`;
-    const sub = (geoLevel === "nta") ? (props.borough || "") : (props.nta || "");
+    const pairRow = (key, meta, bin) => {
+      const moe = props[key + "_moe"];
+      const moeStr = moe != null && props[key] ? ` <span style="color:var(--muted);font-weight:400;font-size:11px">± ${fmtValue(moe, meta.fmt)}</span>` : "";
+      const b = bin(props[key]);
+      const third = b != null && hasVal(props[xKey]) && hasVal(props[yKey]) ? `<div class="moe-line" style="margin-top:0">${THIRD_WORD[b]} third</div>` : "";
+      return `<div class="pair"><span>${meta.label}</span><span class="v">${fmtProp(props, key, meta.fmt)}${moeStr}</span></div>${third}`;
+    };
     return `<div class="tract-tooltip">
-      <div class="ttl">${label}</div>
-      <div class="nta">${sub}</div>
-      <div class="pair"><span>${mx.label}</span><span class="v">${fmtValue(props[xKey], mx.fmt)}${xMoeStr}</span></div>
-      <div class="pair"><span>${my.label}</span><span class="v">${fmtValue(props[yKey], my.fmt)}${yMoeStr}</span></div>
+      <div class="ttl">${placeLabel(props)}</div>
+      <div class="nta">${placeSub(props)}</div>
+      ${pairRow(xKey, mx, binX)}
+      ${pairRow(yKey, my, binY)}
       ${crimeCaveat(props, xKey)}${crimeCaveat(props, yKey)}
+      ${nonresNote(props)}
     </div>`;
   }
 }
 
-// ===== detail panel (single-var only) =====
+// ===== detail panel =====
 function renderDetail(props) {
   document.getElementById("detail-panel").classList.add("open");
-  document.getElementById("det-title").textContent = `${props.borough || "NYC"} · Tract ${props.ct_label || props.geoid}`;
-  document.getElementById("det-nta").textContent = props.nta || "";
+  if (geoLevel === "nta") {
+    document.getElementById("det-title").textContent = props.nta || props.geoid;
+    document.getElementById("det-nta").textContent = `${placeSub(props)} · City Planning code ${props.geoid}`;
+  } else {
+    document.getElementById("det-title").textContent = `${props.borough || "NYC"} · Tract ${props.ct_label || props.geoid}`;
+    document.getElementById("det-nta").textContent = props.nta || "";
+  }
   const groups = {};
   VARS.forEach(v => { (groups[v.group] = groups[v.group] || []).push(v); });
   let html = "";
@@ -1141,13 +1209,13 @@ function renderDetail(props) {
       const val = props[v.key];
       const tail = v.fmt === "pct" || v.fmt === "usd" ? "" : (v.units ? " " + v.units : "");
       const moe = props[v.key + "_moe"];
-      const moeStr = moe != null ? `<span class="moe">± ${fmtValue(moe, v.fmt)}</span>` : "";
+      const moeStr = moe != null && val ? `<span class="moe">± ${fmtValue(moe, v.fmt)}</span>` : "";
       const tier = reliabilityTier(props, v.key);
       const rowCls = tier === "unr" ? " unr" : "";
-      html += `<div class="det-row${rowCls}"><span>${v.label}</span><span class="v">${fmtValue(val, v.fmt)}${tail}${moeStr}</span></div>`;
+      html += `<div class="det-row${rowCls}"><span>${v.label}</span><span class="v">${fmtProp(props, v.key, v.fmt)}${val == null ? "" : tail}${moeStr}</span></div>`;
     });
   });
-  document.getElementById("det-body").innerHTML = html;
+  document.getElementById("det-body").innerHTML = nonresNote(props) + html;
 }
 document.getElementById("detail-close").addEventListener("click", () => {
   document.getElementById("detail-panel").classList.remove("open");
@@ -1158,34 +1226,41 @@ document.getElementById("detail-close").addEventListener("click", () => {
 });
 
 // ===== legends =====
+// True when the highest value on the map for this variable is a top-coded median,
+// so the legend's upper end should read "$250,000+".
+function topIsCoded(key, hi) {
+  return GEO.features.some(f => f.properties[key] === hi && f.properties[key + "_coded"] === "top");
+}
+function legendMissingRows(key) {
+  // Only list the pale non-residential swatch when some of those areas are actually
+  // drawn pale for this variable (counts like population still color them normally).
+  const nonres = GEO.features.some(f => f.properties.non_residential && !hasVal(f.properties[key]));
+  return `<div class="row" style="margin-top:6px;"><span class="swatch" style="background:${NODATA_STYLE.fillColor}"></span>No data</div>` +
+    (nonres ? `<div class="row"><span class="swatch" style="background:${NONRES_STYLE.fillColor}"></span>Park, cemetery, airport, base or jail</div>` : "");
+}
 function buildSingleLegendBody(meta) {
   if (!currentScale) return "";
   let html = "";
+  const sorted = currentScale.values.slice().sort(d3.ascending);
+  const min = sorted[0], max = sorted[sorted.length - 1];
+  const fmtHi = v => fmtValue(v, meta.fmt) + (v === max && topIsCoded(meta.key, max) ? "+" : "");
   if (currentScale.kind === "quantile") {
-    const breaks = currentScale.breaks;
-    const N = currentScale.N;
-    const palette = paletteFor(meta);
-    const sorted = currentScale.values.slice().sort(d3.ascending);
-    let lastShownRange = "";
-    for (let i = 0; i < N; i++) {
-      const lo = i === 0 ? sorted[0] : breaks[i-1];
-      const hi = i === N - 1 ? sorted[sorted.length-1] : breaks[i];
-      const color = palette((i + 0.5) / N);
-      const range = `${fmtValue(lo, meta.fmt)} – ${fmtValue(hi, meta.fmt)}`;
-      // Don't repeat zero-zero buckets (happens when many tracts share a min value)
-      if (range === lastShownRange) continue;
-      lastShownRange = range;
-      html += `<div class="row"><span class="swatch" style="background:${color}"></span>${range}</div>`;
+    const b = currentScale.breaks;
+    for (let i = 0; i < currentScale.N; i++) {
+      // Class i holds values above b[i-1] up to and including b[i].
+      const lo = i === 0 ? min : b[i - 1];
+      const hi = i === currentScale.N - 1 ? max : b[i];
+      const range = (i === 0 && lo === hi) ? fmtValue(lo, meta.fmt) : `${fmtValue(lo, meta.fmt)} – ${fmtHi(hi)}`;
+      html += `<div class="row"><span class="swatch" style="background:${currentScale.colors[i]}"></span>${range}</div>`;
     }
   } else {
     const palette = paletteFor(meta);
     const stops = [];
     for (let i = 0; i <= 10; i++) stops.push(palette(i / 10));
     html += `<div class="grad-row"><span class="grad-bar" style="background:linear-gradient(to right,${stops.join(",")});"></span></div>`;
-    html += `<div class="grad-row" style="justify-content:space-between;"><span>${fmtValue(currentScale.lo, meta.fmt)}</span><span>${fmtValue(currentScale.hi, meta.fmt)}</span></div>`;
+    html += `<div class="grad-row" style="justify-content:space-between;"><span>${fmtValue(currentScale.lo, meta.fmt)}</span><span>${fmtHi(currentScale.hi)}</span></div>`;
   }
-  html += `<div class="row" style="margin-top:6px;"><span class="swatch" style="background:#dcd9cf"></span>No data</div>`;
-  return html;
+  return html + legendMissingRows(meta.key);
 }
 function renderSingleLegend() {
   const meta = metaOf(currentKey);
@@ -1201,49 +1276,73 @@ function renderSingleLegend() {
   }
 }
 
-function renderBivLegend() {
-  const mx = metaOf(xKey), my = metaOf(yKey);
-  const xs = GEO.features.map(f => f.properties[xKey]).filter(v => v != null && isFinite(v)).sort(d3.ascending);
-  const ys = GEO.features.map(f => f.properties[yKey]).filter(v => v != null && isFinite(v)).sort(d3.ascending);
-  const xlo = fmtValue(xs[0], mx.fmt), xhi = fmtValue(xs[xs.length-1], mx.fmt);
-  const ylo = fmtValue(ys[0], my.fmt), yhi = fmtValue(ys[ys.length-1], my.fmt);
-  let grid = '<table class="swatches"><tbody>';
+// The bivariate legend labels the two cut points on each axis (where low/middle/high
+// split), not the min and max — the cut points are what the colors mean.
+function bivGridHtml(tableClass) {
+  let grid = `<table class="${tableClass}"><tbody>`;
   for (let y = 2; y >= 0; y--) {
     grid += '<tr>';
     for (let x = 0; x < 3; x++) {
-      grid += `<td class="biv-cell" data-bx="${x}" data-by="${y}" style="background:${bivCell(x,y)};cursor:pointer"></td>`;
+      grid += `<td class="biv-cell" data-bx="${x}" data-by="${y}" style="background:${bivCell(x,y)};cursor:pointer" title="${THIRD_WORD[x]} ${metaOf(xKey).label.toLowerCase()}, ${THIRD_WORD[y]} ${metaOf(yKey).label.toLowerCase()}"></td>`;
     }
     grid += '</tr>';
   }
-  grid += '</tbody></table>';
-  const sidebarHtml = `
+  return grid + '</tbody></table>';
+}
+function thirdsLine(meta, bin, key) {
+  const f = v => fmtValue(v, meta.fmt);
+  // Count what actually landed in each third: with many tied values (lots of zeros)
+  // the split can't be even, and the reader should see that.
+  const n = [0, 0, 0];
+  GEO.features.forEach(ft => {
+    const p = ft.properties;
+    if (hasVal(p[xKey]) && hasVal(p[yKey])) n[bin(p[key])]++;
+  });
+  const low = bin.q1 === bin.min ? f(bin.min) : `up to ${f(bin.q1)}`;
+  const mid = bin.q2 === bin.q1 ? "none" : `${f(bin.q1)}–${f(bin.q2)}`;
+  const high = `above ${f(bin.q2)}`;
+  return `<div class="biv-thirds"><b>${meta.label}</b><br>` +
+    `low ${low} (${n[0]}) · middle ${mid} (${n[1]}) · high ${high} (${n[2]})</div>`;
+}
+function renderBivLegend() {
+  const mx = metaOf(xKey), my = metaOf(yKey);
+  if (!bivN) {
+    document.getElementById("biv-legend").innerHTML = `<div class="biv-note">No ${unitWord()} have both of these variables.</div>`;
+    document.getElementById("biv-map-legend").innerHTML = "";
+    return;
+  }
+  const tick = (pos, v, fmt, axis) => `<span style="${axis}:${pos}">${fmtShort(v, fmt)}</span>`;
+  const yTicks = (binY.q2 > binY.q1 ? tick("33.33%", binY.q2, my.fmt, "top") : "") + tick("66.67%", binY.q1, my.fmt, "top");
+  const xTicks = tick("33.33%", binX.q1, mx.fmt, "left") + (binX.q2 > binX.q1 ? tick("66.67%", binX.q2, mx.fmt, "left") : "");
+  document.getElementById("biv-legend").innerHTML = `
     <div class="biv-cap">↑ <b>${my.label}</b></div>
     <div class="biv-row">
-      <div class="biv-yrange"><span>${yhi}</span><span>${ylo}</span></div>
-      ${grid.replace('<table>', '<table class="biv-swatches">').replace('<table class="swatches">', '<table class="biv-swatches">')}
+      <div class="biv-yrange">${yTicks}</div>
+      ${bivGridHtml("biv-swatches")}
     </div>
-    <div class="biv-xrow"><div class="biv-xrange"><span>${xlo}</span><span>${xhi}</span></div></div>
+    <div class="biv-xrow"><div class="biv-xrange">${xTicks}</div></div>
     <div class="biv-xcap">→ <b>${mx.label}</b></div>
-    <div class="biv-note">Each axis split into thirds — about 775 tracts per third. Gray = missing on either variable.</div>`;
-  document.getElementById("biv-legend").innerHTML = sidebarHtml;
+    <div class="biv-note">Each axis is split into thirds across the ${bivN.toLocaleString()} ${unitWord()} that have both values. The ticks mark the cut points; counts in parentheses:</div>
+    ${thirdsLine(mx, binX, xKey)}
+    ${thirdsLine(my, binY, yKey)}
+    <div class="biv-note" style="margin-top:6px">Gray = missing on either variable. Hover a square to see only the ${unitWord()} in it.</div>`;
 
-  // Floating legend on the map — same data, slightly larger swatches.
+  // Floating legend on the map — same grid, slightly larger swatches.
   document.getElementById("biv-map-legend").innerHTML = `
     <div class="ml-cap">↑ <b>${my.label}</b></div>
     <div class="ml-row">
-      <div class="ml-yrange"><span>${yhi}</span><span>${ylo}</span></div>
-      ${grid}
+      <div class="ml-yrange">${yTicks}</div>
+      ${bivGridHtml("ml-swatches")}
     </div>
-    <div class="ml-xrow"><div class="ml-xrange"><span>${xlo}</span><span>${xhi}</span></div></div>
+    <div class="ml-xrow"><div class="ml-xrange">${xTicks}</div></div>
     <div class="ml-xcap">→ <b>${mx.label}</b></div>`;
 
   // Attach brushing handlers to every cell in BOTH legends. Hovering a 3×3 cell
-  // dims all tracts not in that bin pair; mouseout restores the full styling.
+  // dims all areas not in that bin pair; mouseout restores the full styling.
   document.querySelectorAll(".biv-cell").forEach(td => {
     td.addEventListener("mouseenter", () => {
       const bx = +td.dataset.bx, by = +td.dataset.by;
       brushBivariate(bx, by);
-      // Mirror highlight on both legends — outline the active cell
       document.querySelectorAll(".biv-cell").forEach(c => {
         const match = +c.dataset.bx === bx && +c.dataset.by === by;
         c.style.outline = match ? "2px solid #111" : "";
@@ -1402,7 +1501,6 @@ function setMode(m) {
   document.getElementById("biv-map-legend").classList.toggle("hidden", single);
   document.getElementById("single-map-legend").classList.toggle("hidden", !single);
   document.getElementById("scatter-panel").classList.toggle("hidden", single);
-  if (!single) document.getElementById("detail-panel").classList.remove("open");
   applyCurrent();
 }
 
@@ -1414,7 +1512,10 @@ function setSingleVar(key) {
 }
 
 function setBivPair(x, y, story) {
-  xKey = x; yKey = y; currentStory = story || "";
+  // Any pair that matches a preset (picked from the dropdowns or opened from a shared
+  // link) gets that preset's explanation.
+  const preset = PRESETS.find(pr => pr.x === x && pr.y === y);
+  xKey = x; yKey = y; currentStory = story || (preset ? preset.story : "");
   rebuildBivBins();
   document.querySelectorAll(".preset").forEach(b => {
     b.classList.toggle("active", b.dataset.x === x && b.dataset.y === y);
@@ -1424,23 +1525,32 @@ function setBivPair(x, y, story) {
   applyCurrent();
 }
 
+function sourceOf(m) {
+  let src = m.source || "ACS 2020–24 5-year";
+  if (m.group && m.group.startsWith("Crime") && RELEASE && RELEASE.crime_window)
+    src += `; 12 months ${RELEASE.crime_window.start} to ${RELEASE.crime_window.end}`;
+  return src;
+}
 function applyCurrent() {
   if (mode === "single") {
     const m = metaOf(currentKey);
     document.getElementById("cur-title").textContent = m.label;
     document.getElementById("cur-desc").textContent = m.desc;
-    document.getElementById("cur-src").textContent = `Source: ACS 2020–2024 5-year · ${m.units}`;
+    document.getElementById("cur-src").textContent = `Source: ${sourceOf(m)} · ${m.units}`;
     renderSingleLegend();
   } else {
     const mx = metaOf(xKey), my = metaOf(yKey);
     document.getElementById("cur-title").textContent = `${mx.label} × ${my.label}`;
-    document.getElementById("cur-desc").innerHTML = `<b>X →</b> ${mx.desc}<br><b>Y ↑</b> ${my.desc}`;
-    document.getElementById("cur-src").textContent = `Source: ACS 2020–2024 5-year`;
+    document.getElementById("cur-desc").innerHTML = `<b>X →</b> ${escapeHtml(mx.desc)}<br><b>Y ↑</b> ${escapeHtml(my.desc)}`;
+    const sx = sourceOf(mx), sy = sourceOf(my);
+    document.getElementById("cur-src").textContent = sx === sy ? `Source: ${sx}` : `Sources: X, ${sx}. Y, ${sy}`;
     document.getElementById("biv-story").textContent = currentStory ||
-      "Each axis is split into thirds across all NYC tracts. The 3×3 cell tells you where this tract falls on both variables at once.";
+      `Each color says where an area falls on both variables at once: its third (low, middle or high) on the horizontal measure and its third on the vertical one. The dark corner is high on both; the pale corner is low on both.`;
     renderBivLegend();
     renderScatter();
   }
+  document.querySelector("#scatter-panel .sp-foot").textContent =
+    `Each dot is a ${geoLevel === "nta" ? "neighborhood" : "census tract"}. Hover a dot to find it on the map; hover the map to find it here.`;
   renderCitySummary();
   if (geoLayer) geoLayer.setStyle(f => styleFor(f.properties));
   syncUrlHash();
@@ -1463,8 +1573,30 @@ document.querySelectorAll("#mode-toggle button").forEach(b => {
 });
 
 // geography-toggle handler
-function setGeoLevel(level) {
+// The tract file is ~16 MB; the default neighborhood view doesn't need it, so it is
+// fetched the first time someone switches to tracts.
+let tractsPromise = null;
+function ensureTracts() {
+  if (GEO_TRACTS) return Promise.resolve(GEO_TRACTS);
+  if (!tractsPromise) {
+    const btn = document.querySelector('#geo-toggle button[data-geo="tract"]');
+    if (btn) btn.textContent = "Loading tracts…";
+    tractsPromise = fetch("tracts.geojson").then(r => {
+      if (!r.ok) throw new Error(`tracts.geojson: HTTP ${r.status}`);
+      return r.json();
+    }).then(g => { GEO_TRACTS = g; return g; })
+      .catch(e => { tractsPromise = null; throw e; })
+      .finally(() => { if (btn) btn.textContent = "Tract"; });
+  }
+  return tractsPromise;
+}
+async function setGeoLevel(level) {
+  if (level !== "nta" && level !== "tract") return;
   if (level === geoLevel) return;
+  if (level === "tract") {
+    try { await ensureTracts(); }
+    catch (e) { console.error(e); alert("Couldn't load the tract map. Try again in a moment."); return; }
+  }
   geoLevel = level;
   GEO = level === "nta" ? GEO_NTAS : GEO_TRACTS;
   document.querySelectorAll("#geo-toggle button").forEach(b => {
@@ -1510,7 +1642,6 @@ function attachGeoLayer() {
         if (mode === "bivariate") highlightScatterDot(null);
       });
       layer.on("click", () => {
-        if (mode !== "single") return;
         if (selectedGeoid) {
           geoLayer.eachLayer(l => { if (l.feature.properties.geoid === selectedGeoid) geoLayer.resetStyle(l); });
         }
@@ -1628,14 +1759,14 @@ function selectSearchResult(i) {
   map.flyTo([lat, lon], Math.max(map.getZoom(), 14), { duration: 0.8 });
   if (tract && geoLayer) {
     // Clear previous selection
-    if (selectedGeoid && mode === "single") {
+    if (selectedGeoid) {
       geoLayer.eachLayer(l => { if (l.feature.properties.geoid === selectedGeoid) geoLayer.resetStyle(l); });
     }
     selectedGeoid = tract.properties.geoid;
     geoLayer.eachLayer(l => {
       if (l.feature.properties.geoid === tract.properties.geoid) {
         l.setStyle(highlightStyle());
-        if (mode === "single") renderDetail(l.feature.properties);
+        renderDetail(l.feature.properties);
       }
     });
   }
@@ -1684,7 +1815,7 @@ document.addEventListener("click", e => {
 
 // ===== linked scatterplot (bivariate mode only) =====
 const SP_W = 266, SP_H = 200;
-const SP_PAD = { top: 6, right: 8, bottom: 24, left: 36 };
+const SP_PAD = { top: 6, right: 10, bottom: 30, left: 36 };
 let spScales = null;            // {x, y} d3 scales from current data
 let spGeoidByDot = new Map();   // geoid → SVG circle node, for map→scatter highlight
 let spDotsByGeoid = new Map();
@@ -1876,7 +2007,10 @@ document.querySelectorAll("#borough-zoom button").forEach(b => {
 
 // ===== URL hash state =====
 // Encode mode, variable(s), geography, scale into the URL so views are shareable.
-let suppressHashApply = false;
+// Read the hash before anything renders: the first render rewrites the hash to the
+// default view, which used to wipe out the shared link before it could be applied.
+const INITIAL_HASH = location.hash;
+let suppressHashApply = true;   // stays on until the shared view has been applied
 function syncUrlHash() {
   if (suppressHashApply) return;
   const parts = new URLSearchParams();
@@ -1892,18 +2026,27 @@ function syncUrlHash() {
   const h = "#" + parts.toString();
   if (location.hash !== h) history.replaceState(null, "", h);
 }
-function applyUrlHash() {
-  if (!location.hash || location.hash.length < 2) return;
-  const p = new URLSearchParams(location.hash.slice(1));
+async function applyUrlHash(hash) {
+  hash = hash == null ? location.hash : hash;
+  if (!hash || hash.length < 2) return;
+  const p = new URLSearchParams(hash.slice(1));
+  const wasSuppressed = suppressHashApply;
   suppressHashApply = true;
   try {
     const g = p.get("g");
-    if (g && g !== geoLevel) setGeoLevel(g);
+    if (g && g !== geoLevel) await setGeoLevel(g);
     if (p.get("m") === "biv") {
       const x = p.get("x"), y = p.get("y");
-      setMode("bivariate");
-      if (x && y && metaOf(x) && metaOf(y)) setBivPair(x, y, "");
+      if (x && y && metaOf(x) && metaOf(y)) {
+        xKey = x; yKey = y;
+        rebuildBivBins();
+        setMode("bivariate");
+        setBivPair(x, y, "");
+      } else {
+        setMode("bivariate");
+      }
     } else {
+      if (mode !== "single") setMode("single");
       const v = p.get("v");
       if (v && metaOf(v)) setSingleVar(v);
       const s = p.get("s");
@@ -1911,21 +2054,26 @@ function applyUrlHash() {
         scaleMode = s;
         document.querySelectorAll("#scale-toggle button").forEach(b => b.classList.toggle("active", b.dataset.scale === s));
         currentScale = buildScale(metaOf(currentKey));
+        renderSingleLegend();
+        renderCitySummary();
         if (geoLayer) geoLayer.setStyle(f => styleFor(f.properties));
       }
     }
-  } finally { suppressHashApply = false; }
+  } finally { suppressHashApply = wasSuppressed; }
 }
-window.addEventListener("hashchange", applyUrlHash);
+window.addEventListener("hashchange", () => applyUrlHash());
 
 // ===== CSV export =====
 document.getElementById("export-csv").addEventListener("click", e => {
   e.preventDefault();
   if (!GEO) return;
   // Always export geoid, borough, nta, plus the variable(s) currently in view (with MOE if present).
-  const cols = ["geoid", "borough", "nta"];
-  if (mode === "single") cols.push(currentKey, currentKey + "_moe");
-  else cols.push(xKey, xKey + "_moe", yKey, yKey + "_moe");
+  // "_coded" marks a top- or bottom-coded median ("top" = at least this value);
+  // non_residential marks parks, cemeteries, airports, bases and jails.
+  const cols = ["geoid", "borough", "nta", "non_residential"];
+  const withCompanions = k => [k, k + "_moe", k + "_coded"];
+  if (mode === "single") cols.push(...withCompanions(currentKey));
+  else cols.push(...withCompanions(xKey), ...withCompanions(yKey));
   const rows = [cols.join(",")];
   for (const f of GEO.features) {
     const p = f.properties;
@@ -1948,16 +2096,15 @@ document.getElementById("export-csv").addEventListener("click", e => {
 });
 
 // ===== bootstrap =====
+const getJson = url => fetch(url).then(r => { if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`); return r.json(); });
 Promise.all([
-  fetch("variables.json").then(r => r.json()),
-  fetch("tracts.geojson").then(r => r.json()),
-  fetch("release.json").then(r => r.json()).catch(() => ({})),
-  fetch("ntas.geojson").then(r => r.json()).catch(() => null),
-]).then(([vars, tractsGeo, release, ntasGeo]) => {
+  getJson("variables.json"),
+  getJson("release.json").catch(() => ({})),
+  getJson("ntas.geojson"),
+]).then(async ([vars, release, ntasGeo]) => {
   VARS = vars;
-  GEO_TRACTS = tractsGeo;
   GEO_NTAS = ntasGeo;
-  GEO = (geoLevel === "nta" && GEO_NTAS) ? GEO_NTAS : GEO_TRACTS;
+  GEO = GEO_NTAS;
   RELEASE = release;
   try {
     if (release && release.years) document.getElementById("release-name").textContent = release.years;
@@ -1976,7 +2123,9 @@ Promise.all([
   }
   try { initMap(); } catch (e) { console.error("map init error:", e); }
   // Apply any hash-encoded view state (variable, mode, geography, scale) from a shared URL.
-  try { applyUrlHash(); } catch (e) { console.error("hash init error:", e); }
+  try { await applyUrlHash(INITIAL_HASH); } catch (e) { console.error("hash init error:", e); }
+  suppressHashApply = false;
+  syncUrlHash();
 }).catch(e => {
   console.error("data load error:", e);
   document.getElementById("cur-title").textContent = "Failed to load data";

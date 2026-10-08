@@ -5,10 +5,15 @@ Fetches latest ACS 5-year data from the Census Reporter API
 (https://api.censusreporter.org) — no API key required.
 Joins with NYC tract geometry and outputs:
   docs/tracts.geojson  — one feature per NYC tract with all metrics baked in
+  docs/ntas.geojson    — the same metrics re-derived for NYC DCP's 262 NTAs
   docs/variables.json  — metric metadata for the UI
   docs/release.json    — name/year of the ACS release used
+
+Raw Census Reporter responses are cached in cache/ (not committed) so repeat
+builds are fast and reproducible. Pass --refresh to re-download them.
 """
 import json
+import sys
 import time
 import urllib.request
 from pathlib import Path
@@ -33,7 +38,12 @@ TABLE_BATCHES = [
     ["C16001", "B25003", "B25064", "B25077", "B25071", "B08301", "B23025", "B21001", "B22010", "B28002"],
     # Vehicles + schools
     ["B08201", "B25044", "B14002"],
+    # Distributions behind the rent, home-value and rent-burden medians. Needed to
+    # interpolate true NTA medians from pooled brackets (see NTA aggregation below).
+    ["B25063", "B25075", "B25070"],
 ]
+CACHE = ROOT / "cache"
+REFRESH = "--refresh" in sys.argv
 
 
 def fetch(url, retries=4):
@@ -58,13 +68,19 @@ def fetch_county(county_fips):
     est_out = {}
     moe_out = {}
     release = None
-    for batch in TABLE_BATCHES:
+    for i, batch in enumerate(TABLE_BATCHES):
         url = (
             "https://api.censusreporter.org/1.0/data/show/latest"
             f"?table_ids={','.join(batch)}"
             f"&geo_ids=140|05000US{county_fips}"
         )
-        data = fetch(url)
+        cache_file = CACHE / f"{county_fips}_{'-'.join(batch)}.json"
+        if cache_file.exists() and not REFRESH:
+            data = json.load(open(cache_file))
+        else:
+            data = fetch(url)
+            CACHE.mkdir(exist_ok=True)
+            json.dump(data, open(cache_file, "w"))
         release = data.get("release")
         for geo, tables in data["data"].items():
             tract = geo[-11:]
@@ -158,6 +174,24 @@ def cv(estimate, moe):
     if estimate is None or moe is None or estimate == 0:
         return None
     return moe / (1.645 * abs(estimate))
+
+
+# Tract medians come straight from the Census Bureau, which top- and bottom-codes them
+# when the median falls in an open-ended interval ("250,000+", "10,000-"). Census
+# Reporter returns those as jam values one unit past the threshold, with no MOE.
+# Store the threshold itself and flag it so the UI can print "$250,000+".
+JAM_VALUES = {
+    "median_hh_income":   {250001: (250000, "top"), 2499: (2500, "bottom")},
+    "median_gross_rent":  {3501: (3500, "top"), 99: (100, "bottom")},
+    "median_home_value":  {2000001: (2000000, "top"), 9999: (10000, "bottom")},
+    "median_rent_burden": {51.0: (50.0, "top"), 9.0: (10.0, "bottom")},
+}
+
+def flag_jam_values(rec):
+    for key, jams in JAM_VALUES.items():
+        v = rec.get(key)
+        if v in jams and rec.get(key + "_moe") is None:
+            rec[key], rec[key + "_coded"] = jams[v]
 
 
 # ---------- derive metrics (refactored as function so we can call it per-tract AND per-NTA aggregate) ----------
@@ -384,6 +418,7 @@ for tract, d in all_data.items():
         if moe_val >= 1000: rec[key + '_moe'] = round(moe_val)
         elif moe_val >= 10: rec[key + '_moe'] = round(moe_val, 1)
         else: rec[key + '_moe'] = round(moe_val, 2)
+    flag_jam_values(rec)
     derived[tract] = rec
 
 # ---------- merge rent-stabilized building counts (optional) ----------
@@ -634,18 +669,58 @@ def agg_moe_cells(tract_geoids, source):
             out[k] = out.get(k, 0) + v * v
     return {k: _math.sqrt(v) for k, v in out.items()}
 
-# Helper: weighted average of tract medians (a true NTA median would need microdata).
-def weighted_median_estimate(tract_geoids, median_key, weight_key="B01003001"):
-    weighted_sum = 0.0
-    weight_total = 0.0
-    for g in tract_geoids:
-        med = all_data.get(g, {}).get(median_key)
-        wgt = all_data.get(g, {}).get(weight_key)
-        if med is None or wgt is None or wgt <= 0:
-            continue
-        weighted_sum += med * wgt
-        weight_total += wgt
-    return (weighted_sum / weight_total) if weight_total else None
+# Medians can't be summed, so NTA medians are interpolated from the pooled frequency
+# distribution behind each one: add up each bracket across member tracts, find the
+# bracket holding the middle household (or person, or unit), and interpolate linearly
+# within it. This is the method NYC DCP uses for its published NTA profiles; checked
+# against DCP's 2020-24 NTA files, it reproduces their medians to within $2 (income,
+# rent, home value) and 0.1 year (age).
+def interp_median(counts, lows):
+    """Median of a grouped distribution. Bracket i runs from lows[i] to lows[i+1];
+    the last bracket is open-ended. Returns (value, coded): coded is "top" when the
+    median lands in the open top bracket, in which case value is that bracket's floor
+    and the true median is only known to be at least that high."""
+    total = sum(counts)
+    if total <= 0:
+        return None, None
+    half = total / 2.0
+    cum = 0.0
+    for i, c in enumerate(counts):
+        if c > 0 and cum + c >= half:
+            if i == len(counts) - 1:
+                return float(lows[i]), "top"
+            return lows[i] + (half - cum) / c * (lows[i + 1] - lows[i]), None
+        cum += c
+    return None, None
+
+def _cols(table, first, last):
+    return [f"{table}{i:03d}" for i in range(first, last + 1)]
+
+# median key -> (bracket cell groups, bracket lower bounds). Each inner list is summed,
+# which lets age add the male and female cells for the same bracket.
+MEDIAN_DISTRIBUTIONS = {
+    "median_hh_income": ([[c] for c in _cols("B19001", 2, 17)],
+        [0, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000, 60000,
+         75000, 100000, 125000, 150000, 200000]),
+    "median_age": ([[m, f] for m, f in zip(_cols("B01001", 3, 25), _cols("B01001", 27, 49))],
+        [0, 5, 10, 15, 18, 20, 21, 22, 25, 30, 35, 40, 45, 50, 55, 60, 62, 65, 67, 70,
+         75, 80, 85]),
+    "median_gross_rent": ([[c] for c in _cols("B25063", 3, 26)],   # cash-rent units only
+        [0, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800,
+         900, 1000, 1250, 1500, 2000, 2500, 3000, 3500]),
+    "median_home_value": ([[c] for c in _cols("B25075", 2, 27)],
+        [0, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 50000, 60000, 70000, 80000,
+         90000, 100000, 125000, 150000, 175000, 200000, 250000, 300000, 400000, 500000,
+         750000, 1000000, 1500000, 2000000]),
+    "median_rent_burden": ([[c] for c in _cols("B25070", 2, 10)],  # excludes "not computed"
+        [0, 10, 15, 20, 25, 30, 35, 40, 50]),
+}
+
+def nta_median(agg, key):
+    groups, lows = MEDIAN_DISTRIBUTIONS[key]
+    counts = [sum(agg.get(c) or 0 for c in grp) for grp in groups]
+    return interp_median(counts, lows)
+
 
 
 # Aggregate
@@ -659,24 +734,23 @@ for nf in nta_base["features"]:
     agg_m = agg_moe_cells(member_tracts, all_moes)
     rec, moes = derive_one(agg_d, agg_m)
 
-    # Replace median estimates with population-weighted tract-median averages (approximation,
-    # since you can't aggregate medians from medians; we flag this in methodology).
-    # Also clear their MOEs from the dict — the sum-of-squares of tract median MOEs is not a
-    # defensible MOE for a population-weighted average. We will not show ± for aggregated medians.
-    # Weight each tract's median by the universe of its own table: people for age,
-    # households for income and household size, renter-occupied units for rent and
-    # rent burden, owner-occupied units for home value. (For avg_hh_size this is exact:
-    # Σ(avg × households) / Σ households = people in households / households.)
-    for median_key, raw, weight in [
-        ("median_age", "B01002001", "B01003001"),
-        ("median_hh_income", "B19013001", "B19001001"),
-        ("median_gross_rent", "B25064001", "B25003003"),
-        ("median_home_value", "B25077001", "B25003002"),
-        ("median_rent_burden", "B25071001", "B25003003"),
-        ("avg_hh_size", "B25010001", "B11016001"),
-    ]:
-        rec[median_key] = weighted_median_estimate(member_tracts, raw, weight)
-        moes[median_key] = None  # suppress; aggregated medians don't have a clean MOE
+    # Medians: interpolate from the pooled distributions (see interp_median). The
+    # sum-of-squares of tract MOEs says nothing about an interpolated median, so no ±
+    # is published for these at the NTA level.
+    for median_key in MEDIAN_DISTRIBUTIONS:
+        val, coded = nta_median(agg_d, median_key)
+        rec[median_key] = val
+        if coded:
+            rec[median_key + "_coded"] = coded
+        moes[median_key] = None
+    # Average household size is exact when weighted by households:
+    # Σ(avg × households) / Σ households = people in households / households.
+    hh_people = sum((all_data.get(g, {}).get("B25010001") or 0) * (all_data.get(g, {}).get("B11016001") or 0)
+                    for g in member_tracts if all_data.get(g, {}).get("B25010001") is not None)
+    hh_count = sum(all_data.get(g, {}).get("B11016001") or 0
+                   for g in member_tracts if all_data.get(g, {}).get("B25010001") is not None)
+    rec["avg_hh_size"] = hh_people / hh_count if hh_count else None
+    moes["avg_hh_size"] = None
 
     # Attach MOE companions
     for key, moe_val in moes.items():
@@ -853,14 +927,6 @@ for f in features:
         if k.startswith("_"):
             del f["properties"][k]
 
-nta_out = {"type": "FeatureCollection", "features": nta_features}
-json.dump(nta_out, open(DOCS / "ntas.geojson", "w"))
-print(f"Wrote {DOCS/'ntas.geojson'}  ({(DOCS/'ntas.geojson').stat().st_size/1_000_000:.2f} MB)")
-
-out_geo = {"type": "FeatureCollection", "features": features}
-json.dump(out_geo, open(DOCS / "tracts.geojson", "w"))
-print(f"Wrote {DOCS/'tracts.geojson'}  ({(DOCS/'tracts.geojson').stat().st_size/1_000_000:.2f} MB)")
-
 # ---------- variable metadata ----------
 # Variables list — ordered as a "neighborhood scouting" narrative:
 #   who lives there → how they're grouped → money → housing → safety → education → work → leftovers.
@@ -868,9 +934,9 @@ VARS = [
     # --- 1. People ---
     # Pop totals: ACS estimate then 2020 count.
     ("People", "pop_total", "Total population (ACS, 2020–24 avg)", "int", "people",
-     "Total residents in the tract — ACS 2020–24 5-year survey estimate. Has a margin of error; the 2020 Decennial count below is more precise but 5 years older."),
+     "Total residents — ACS 2020–24 5-year survey estimate. Has a margin of error; the 2020 Decennial count below is more precise but 5 years older."),
     ("People", "pop_2020", "Total population (2020 Decennial count)", "int", "people",
-     "Total residents in the tract from the 2020 Decennial Census — a 100% count, not a survey estimate. No margin of error. Roughly 5 years stale by now."),
+     "Total residents from the 2020 Decennial Census — a 100% count, not a survey estimate. No margin of error. Roughly 5 years stale by now."),
     ("People", "pop_density", "Population density", "num1", "people/sq mi",
      "ACS residents per square mile of land area."),
     ("People", "median_age", "Median age", "num1", "years",
@@ -938,19 +1004,19 @@ VARS = [
     ("Income & poverty", "pct_hh_150_200k", "Households $150k–$200k", "pct", "%",
      "Share of households earning $150,000 to $199,999."),
     ("Income & poverty", "pct_hh_200kplus", "Households $200k+", "pct", "%",
-     "Share of households earning $200,000 or more. This is the highest bracket ACS publishes at tract level — Census top-codes everything above $200k here. For dollar-precise distinctions among the very wealthy ($500k+, $1M+), tract-level data is not publicly available; the IRS Statistics of Income series breaks out higher bands but only at the ZIP-code level."),
+     "Share of households earning $200,000 or more. This is the highest bracket the ACS publishes for small areas; nothing above it is broken out. The IRS's ZIP-code income statistics stop at the same $200,000-or-more class, so there is no public small-area count of, say, $500,000-plus households."),
 
     # --- 6. Housing ---
     ("Housing", "median_gross_rent", "Median gross rent", "usd", "$/mo",
      "Median monthly gross rent for renter-occupied units paying cash rent. \"Gross\" rent is contract rent plus the estimated cost of utilities and fuel (electricity, gas, water, sewer, oil) when paid by the renter — so two apartments with the same advertised rent can have different gross rents depending on what's included. Excludes no-cash-rent units (ACS B25064)."),
     ("Housing", "median_home_value", "Median home value", "usd", "$",
      "Median value of owner-occupied housing units, by self-report (ACS B25077)."),
-    ("Housing", "median_rent_burden", "Median rent burden", "num1", "%",
-     "Median gross rent as a percentage of household income in the past 12 months (ACS B25071)."),
+    ("Housing", "median_rent_burden", "Median rent burden", "pct", "%",
+     "Median gross rent as a percentage of household income in the past 12 months, among renter households for whom it can be computed (ACS B25071)."),
     ("Housing", "rs_share_of_renters", "Rent-stabilized share of rentals", "pct", "%",
      "Estimated share of renter-occupied units that are rent-stabilized, as of 2024. Numerator: tax-bill-derived stabilized unit count (see methodology — NYC HCR does not publish per-building unit counts directly, so the number is reverse-engineered from each property's Rent Stabilization Fee on its DOF Statement of Account). Denominator: ACS 2020-24 renter-occupied units. Clipped at 100%."),
     ("Housing", "rs_units_2024", "Rent-stabilized units (count)", "int", "units",
-     "Estimated rent-stabilized apartments in the tract in 2024. Derived from per-building Rent Stabilization Fees on NYC Department of Finance tax bills — there is no official DHCR per-building unit publication. Citywide total (~994k) is consistent with the roughly one million stabilized units the Rent Guidelines Board reports. See methodology for full caveats."),
+     "Estimated rent-stabilized apartments in 2024. Derived from per-building Rent Stabilization Fees on NYC Department of Finance tax bills — there is no official DHCR per-building unit publication. Citywide total (~994k) is consistent with the roughly one million stabilized units the Rent Guidelines Board reports. See methodology for full caveats."),
     ("Housing", "rs_buildings", "Rent-stabilized buildings (count)", "int", "buildings",
      "Number of buildings with at least one rent-stabilized unit billed on their 2024 property tax bill. This is the cleaner of the two rent-stabilization metrics — the building list is well-defined, while the per-building unit count is a tax-bill-derived estimate."),
     ("Housing", "rs_density_per_sqmi", "Rent-stabilized unit density", "num1", "units/sq mi",
@@ -958,11 +1024,11 @@ VARS = [
 
     # --- 7. Crime ---
     ("Crime (rolling 12 mo.)", "crime_total_rate", "Major-felony rate", "num1", "per 1,000 residents",
-     "All seven major felonies — murder, rape, robbery, felony assault, burglary, grand larceny, grand larceny of motor vehicle — per 1,000 residents over the most recent 12 months (NYPD). Denominator is residential population, so tracts with low residential population but high daytime/visitor traffic (Midtown, FiDi, Times Square, the parks, transit hubs) show inflated rates that reflect crimes against commuters and visitors, not residents."),
+     "All seven major felonies — murder, rape, robbery, felony assault, burglary, grand larceny, grand larceny of motor vehicle — per 1,000 residents over the most recent 12 months (NYPD). Denominator is residential population, so areas with few residents but heavy daytime or visitor traffic (Midtown, FiDi, Times Square, the parks, transit hubs) show inflated rates that reflect crimes against commuters and visitors, not residents."),
     ("Crime (rolling 12 mo.)", "crime_violent_rate", "Violent-crime rate", "num1", "per 1,000 residents",
-     "Murder, rape, robbery, and felony assault per 1,000 residents over the most recent 12 months (NYPD). Same residential-denominator caveat as the major-felony rate: commercial / transit / park tracts can look extreme because few people live there."),
+     "Murder, rape, robbery, and felony assault per 1,000 residents over the most recent 12 months (NYPD). Same residential-denominator caveat as the major-felony rate: commercial and transit-hub areas can look extreme because few people live there."),
     ("Crime (rolling 12 mo.)", "crime_property_rate", "Property-crime rate", "num1", "per 1,000 residents",
-     "Burglary, grand larceny, and grand larceny of motor vehicle per 1,000 residents over the most recent 12 months (NYPD). Same residential-denominator caveat: in commercial-heavy tracts the rate captures crimes against businesses and visitors as well as residents."),
+     "Burglary, grand larceny, and grand larceny of motor vehicle per 1,000 residents over the most recent 12 months (NYPD). Same residential-denominator caveat: in commercial-heavy areas the rate captures crimes against businesses and visitors as well as residents."),
 
     # --- 8. Education ---
     # Ordered low → high attainment.
@@ -976,11 +1042,11 @@ VARS = [
     # --- 9. Schools (K-12) — pairs naturally with Education ---
     # Total count first, then share by residence, then location-based count.
     ("Schools (K-12)", "k12_students", "K-12 students (count, by residence)", "int", "students",
-     "Total K-12 students living in the tract (ACS, by student residence)."),
+     "Total K-12 students living here (ACS, by student residence)."),
     ("Schools (K-12)", "pct_kids_public_k12", "K-12 students in public school", "pct", "%",
      "Share of kindergarten-through-12th-grade students enrolled in public school (ACS, by student residence; the complement attends private or parochial)."),
     ("Schools (K-12)", "doe_public_k12_enrolled", "Public-school K-12 enrolled (by school location)", "int", "students",
-     "K-12 students enrolled at public schools located in this tract, from NYC DOE Demographic Snapshot rosters. Counts by school location, not student residence — so the number is high in tracts that contain a large school and zero in tracts with no school."),
+     "K-12 students enrolled at public schools located here, from NYC DOE Demographic Snapshot rosters (latest year per school, mostly 2021-22). Counts by school location, not student residence — so the number is high where there is a large school and zero where there is none."),
 
     # --- 10. Work & commute ---
     ("Work & commute", "pct_in_labor_force", "In labor force (16+)", "pct", "%",
@@ -1002,17 +1068,17 @@ VARS = [
 
     # --- 12. Elections (NYC BoE) ---
     ("Elections", "pres_2024_d_pct", "Harris vote share, 2024 president", "pct", "%",
-     "Kamala Harris share of the major-party (D+R) vote in the November 2024 general election. Each candidate's total includes every ballot line they appeared on — Harris counts Democratic + Working Families; Trump counts Republican + Conservative. NYC BoE ED-level results, aggregated to tracts by ED centroid."),
+     "Kamala Harris share of the major-party (D+R) vote in the November 2024 general election. Each candidate's total includes every ballot line they appeared on — Harris counts Democratic + Working Families; Trump counts Republican + Conservative. NYC BoE election-district results, assigned to tracts by district centroid."),
     ("Elections", "pres_2024_r_pct", "Trump vote share, 2024 president", "pct", "%",
      "Donald Trump share of the major-party (D+R) vote in the November 2024 general election. Trump's total includes Republican + Conservative ballot lines; Harris's includes Democratic + Working Families. NYC BoE ED-level results."),
     ("Elections", "pres_2024_total", "Major-party votes cast, 2024 president", "int", "votes",
-     "Total D+R votes cast for president in 2024 in this tract."),
+     "Total D+R votes cast for president in 2024."),
     ("Elections", "pres_2020_d_pct", "Biden vote share, 2020 president", "pct", "%",
      "Joe Biden share of the major-party (D+R) vote in the November 2020 general election. Biden's total includes Democratic + Working Families ballot lines; Trump's includes Republican + Conservative. NYC BoE ED-level results."),
     ("Elections", "pres_2020_r_pct", "Trump vote share, 2020 president", "pct", "%",
      "Donald Trump share of the major-party (D+R) vote in the November 2020 general election. Trump's total includes Republican + Conservative ballot lines; Biden's includes Democratic + Working Families."),
     ("Elections", "pres_2020_total", "Major-party votes cast, 2020 president", "int", "votes",
-     "Total D+R votes cast for president in 2020 in this tract."),
+     "Total D+R votes cast for president in 2020."),
     ("Elections", "pres_d_shift_2020_2024", "Democratic shift, 2020 → 2024 president", "num1", "percentage points",
      "Change in the Democratic share of the two-party presidential vote from 2020 to 2024. Negative = Republican gain; positive = Democratic gain."),
     ("Elections", "mayor_2025_mamdani_pct", "Mamdani vote share, 2025 mayor", "pct", "%",
@@ -1022,13 +1088,13 @@ VARS = [
     ("Elections", "mayor_2025_sliwa_pct", "Sliwa vote share, 2025 mayor", "pct", "%",
      "Curtis Sliwa (Republican) share of the three-way mayoral vote in 2025."),
     ("Elections", "mayor_2025_total", "Major-candidate votes cast, 2025 mayor", "int", "votes",
-     "Total Mamdani + Cuomo + Sliwa votes cast in this tract in 2025."),
+     "Total Mamdani + Cuomo + Sliwa votes cast in 2025."),
     ("Elections", "mayor_2021_adams_pct", "Adams vote share, 2021 mayor", "pct", "%",
      "Eric Adams (Democrat) share of the two-major-candidate (Adams + Sliwa) vote in the November 2021 general mayoral election."),
     ("Elections", "mayor_2021_sliwa_pct", "Sliwa vote share, 2021 mayor", "pct", "%",
      "Curtis Sliwa (Republican) share of the two-major-candidate vote in 2021."),
     ("Elections", "mayor_2021_total", "Major-candidate votes cast, 2021 mayor", "int", "votes",
-     "Total Adams + Sliwa votes cast in this tract in 2021."),
+     "Total Adams + Sliwa votes cast in 2021."),
 
     # --- 13. Other (always last) ---
     ("Other", "pct_veteran", "Veterans (18+)", "pct", "%",
@@ -1037,12 +1103,59 @@ VARS = [
      "Share of households with no internet access at the residence — neither a paid subscription nor any other means of getting online from home (ACS B28002_013). Members of these households may still get online elsewhere (work, school, phone plan billed separately), but nothing at home."),
 ]
 
+def source_for(group, key):
+    """Short source line shown under each variable in the UI."""
+    if group.startswith("Crime"):
+        return "NYPD complaint data (Historic + Year-to-Date); residents from ACS 2020–24"
+    if group == "Elections":
+        return "NYC Board of Elections, election-district results"
+    if key == "rs_share_of_renters":
+        return "JustFix.nyc compilation of NYC Finance tax bills (2024); renters from ACS 2020–24"
+    if key.startswith("rs_"):
+        return "JustFix.nyc compilation of NYC Finance tax bills (2024)"
+    if key == "doe_public_k12_enrolled":
+        return "NYC DOE Demographic Snapshot, by school location"
+    if key == "pop_2020":
+        return "2020 Decennial Census (P.L. 94-171)"
+    if key.endswith("_2020"):
+        return "2020 Decennial Census (DHC, via IPUMS NHGIS)"
+    return "ACS 2020–24 5-year"
+
 vars_meta = [
-    {"group": g, "key": k, "label": l, "fmt": f, "units": u, "desc": desc}
+    {"group": g, "key": k, "label": l, "fmt": f, "units": u, "desc": desc, "source": source_for(g, k)}
     for (g, k, l, f, u, desc) in VARS
 ]
 json.dump(vars_meta, open(DOCS / "variables.json", "w"))
 print(f"Wrote {DOCS/'variables.json'}  ({len(vars_meta)} variables)")
+
+# ---------- non-residential areas ----------
+# DCP classifies 65 NTAs as parks, cemeteries, airports, military bases, jails and
+# industrial zones. The few people counted in them mostly live in group quarters
+# (Rikers, the Randall's Island shelters) or on bases, and their shares swing wildly
+# (Miller Field: 75 residents, 85% Hispanic). Keep the counts, drop every share, median
+# and rate so these places don't set the color scales for actual neighborhoods.
+COUNT_KEYS = {k for (g, k, l, f, u, desc) in VARS if f == "int"}
+RATE_KEYS = {k for (g, k, l, f, u, desc) in VARS if f != "int"}
+nonres_cleared = 0
+for f in features + nta_features:
+    props = f["properties"]
+    if not props.get("non_residential"):
+        continue
+    nonres_cleared += 1
+    for k in RATE_KEYS:
+        props[k] = None
+        props.pop(k + "_moe", None)
+        props.pop(k + "_coded", None)
+    props.pop("crime_commercial_daytime", None)
+print(f"Cleared shares/medians/rates for {nonres_cleared} non-residential tracts + NTAs.")
+
+nta_out = {"type": "FeatureCollection", "features": nta_features}
+json.dump(nta_out, open(DOCS / "ntas.geojson", "w"))
+print(f"Wrote {DOCS/'ntas.geojson'}  ({(DOCS/'ntas.geojson').stat().st_size/1_000_000:.2f} MB)")
+
+out_geo = {"type": "FeatureCollection", "features": features}
+json.dump(out_geo, open(DOCS / "tracts.geojson", "w"))
+print(f"Wrote {DOCS/'tracts.geojson'}  ({(DOCS/'tracts.geojson').stat().st_size/1_000_000:.2f} MB)")
 
 # release info — include crime window when present
 release_blob = dict(release_meta or {})

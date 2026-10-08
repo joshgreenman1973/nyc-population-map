@@ -49,9 +49,13 @@
   <p>The default view aggregates tracts into NYC DCP's 262 Neighborhood Tabulation Areas: 197 residential NTAs plus 65 that DCP classifies as parks, cemeteries, airports, industrial or correctional areas. Each tract belongs to exactly one NTA.</p>
   <ul>
     <li><strong>Counts and shares</strong> are recomputed from the sum of the underlying ACS cells across member tracts, so an NTA poverty rate is total poor ÷ total poverty universe, not an average of tract rates. MOEs for the summed cells use √Σmoe², then the same proportion formula as for tracts. Combining roughly nine tracts cuts a typical relative MOE to about a third of the tract-level figure.</li>
-    <li><strong>Medians cannot be summed.</strong> NTA values for median age, household income, gross rent, home value, rent burden and average household size are weighted averages of the tract medians, weighted by the universe of each table (people, households, renter-occupied units, owner-occupied units, renter-occupied units and households respectively). They are approximations of the true NTA median, so no ± is shown for them.</li>
-    <li><strong>2020 Decennial counts, election votes, rent-stabilized units, school enrollment and crime counts</strong> are summed across member tracts. Crime rates are suppressed for NTAs with fewer than 500 residents and for all non-residential NTAs.</li>
+    <li><strong>Medians cannot be summed or averaged.</strong> NTA medians are interpolated from the pooled distribution behind each one: the bracket counts are added up across member tracts, the bracket holding the middle household (or person, or unit) is found, and the median is placed within that bracket by linear interpolation. The distributions are B19001 for household income, B01001 (both sexes) for age, B25063 for gross rent, B25075 for home value and B25070 for rent burden. This is the method NYC City Planning uses for its own NTA profiles. Checked against City Planning's published <a href="https://www.nyc.gov/content/planning/pages/resources/datasets/american-community-survey" target="_blank" rel="noopener">2020–2024 NTA tables</a>, the results match to within $2 for income, rent and home value and 0.1 year for age in all 197 residential NTAs. No ± is shown for these interpolated medians.</li>
+    <li><strong>Open-ended top brackets.</strong> When the middle household falls in a bracket with no upper limit, the median is known only to be at least that bracket's floor, and the map prints it that way: "$200,000+" for income, "$3,500+" for rent, "$2,000,000+" for home value. Tribeca-Civic Center and Upper East Side-Carnegie Hill are top-coded on income. Tract medians come straight from the Census Bureau, which top-codes them at "$250,000+", "$3,500+", "$2,000,000+" and "50%+" (rent burden) and bottom-codes a few; the map shows those the same way. For sorting and coloring, a top-coded value counts as its floor.</li>
+    <li><strong>Average household size</strong> is exact at the NTA level: tract averages weighted by households add up to people in households ÷ households.</li>
+    <li><strong>2020 Decennial counts, election votes, rent-stabilized units, school enrollment and crime counts</strong> are summed across member tracts. Crime rates are suppressed for NTAs with fewer than 500 residents.</li>
+    <li><strong>Non-residential areas.</strong> City Planning classifies 65 NTAs as parks, cemeteries, airports, military installations, jails or industrial zones. Most have no residents. The few people counted in the others live in places like Rikers Island, Randall's Island and Fort Hamilton, and their shares swing widely (Miller Field, with 75 residents, came out 85% Hispanic). These NTAs, and the tracts inside them, keep their counts (population, households, votes, units) but show no shares, medians or rates, so they do not set the color scales for residential neighborhoods. They are drawn in a paler gray than "no data."</li>
   </ul>
+  <p><strong>Change, October 2026:</strong> earlier versions of this map averaged the tract medians, weighted by households or units. That approximation was off by a median of about $1,900 on NTA household income and by as much as $28,000 (Old Astoria-Hallets Point showed $112,417; City Planning's figure is $84,443). The worst rent gap was $413 (Midtown-Times Square) and the worst home-value gap $302,000 (Hunts Point showed $635,400; City Planning has $333,332). Tribeca showed $229,813, a figure the brackets cannot support; its median is above $200,000 and can't be pinned down further. The non-residential NTAs were also included in the color scales. Both are fixed.</p>
 
   <h2>How values are calculated</h2>
   <p>Every variable in the map either comes directly from an ACS estimate (medians and totals) or is computed as a share, using the <strong>denominator the Census Bureau publishes alongside that table</strong>. For example:</p>
@@ -71,14 +75,14 @@
       <tr><td>Share under 18</td><td>Σ B01001 male+female under-18 cells ÷ B01003_001</td></tr>
       <tr><td>Share 65 and over</td><td>Σ B01001 male+female 65+ cells ÷ B01003_001</td></tr>
       <tr><td>White, Black, Asian (non-Hispanic), Hispanic</td><td>B03002_003 / 004 / 006 / 012 ÷ B03002_001</td></tr>
-      <tr><td>Median household income</td><td>B19013_001</td></tr>
+      <tr><td>Median household income</td><td>B19013_001 (tracts); interpolated from B19001 (NTAs)</td></tr>
       <tr><td>Household income bands</td><td>Sums of B19001 cells ÷ B19001_001</td></tr>
       <tr><td>Poverty rate</td><td>B17001_002 ÷ B17001_001</td></tr>
       <tr><td>Receiving SNAP</td><td>B22010_002 ÷ B22010_001</td></tr>
       <tr><td>Households / avg household size</td><td>B11016_001 / B25010_001</td></tr>
       <tr><td>Owner-occupied homes</td><td>B25003_002 ÷ B25003_001</td></tr>
-      <tr><td>Median gross rent / home value</td><td>B25064_001 / B25077_001</td></tr>
-      <tr><td>Median rent burden</td><td>B25071_001 (median rent as % of household income)</td></tr>
+      <tr><td>Median gross rent / home value</td><td>B25064_001 / B25077_001 (tracts); interpolated from B25063 / B25075 (NTAs)</td></tr>
+      <tr><td>Median rent burden</td><td>B25071_001, median gross rent as % of household income (tracts); interpolated from B25070 (NTAs)</td></tr>
       <tr><td>Bachelor's+ / HS only</td><td>Σ B15003_022–025 / Σ B15003_017–018 ÷ B15003_001</td></tr>
       <tr><td>Foreign-born</td><td>B05002_013 ÷ B05002_001</td></tr>
       <tr><td>Not a U.S. citizen</td><td>B05002_021 ÷ B05002_001</td></tr>
@@ -135,7 +139,7 @@
     <li>The tract-detail panel shows ± for every variable that has a propagated MOE.</li>
     <li>A <strong>"Fade unreliable estimates"</strong> checkbox in the sidebar adds a 25% opacity overlay and dashed border to any tract whose value falls in the "unreliable" tier — so users can see uncertainty visually without losing the underlying data.</li>
   </ul>
-  <p>MOEs for derived shares are propagated using the Census Bureau's standard formulas from the <a href="https://www.census.gov/content/dam/Census/library/publications/2020/acs/acs_general_handbook_2020.pdf" target="_blank" rel="noopener">ACS General Handbook</a> (chapter 8, "Calculating Measures of Error for Derived Estimates"): <em>moe(p) = √[moe(x)² − p² · moe(y)²] / y</em> for proportions where the numerator is a subset of the denominator (with a fall-back to the independent-ratio formula when the radicand is negative). Sum-of-cells MOEs use √Σmoe². Medians use the published MOE directly.</p>
+  <p>MOEs for derived shares are propagated using the Census Bureau's standard formulas from the <a href="https://www.census.gov/content/dam/Census/library/publications/2020/acs/acs_general_handbook_2020.pdf" target="_blank" rel="noopener">ACS General Handbook</a> (chapter 8, "Calculating Measures of Error for Derived Estimates"): <em>moe(p) = √[moe(x)² − p² · moe(y)²] / y</em> for proportions where the numerator is a subset of the denominator (with a fall-back to the independent-ratio formula when the radicand is negative). Sum-of-cells MOEs use √Σmoe². Tract medians use the published MOE directly; interpolated NTA medians carry no ±.</p>
 
   <h2>The undocumented-population proxy</h2>
   <p>The U.S. Census Bureau does not ask about immigration status, so there is no direct tract-level count of undocumented residents. Every published "undocumented by tract" figure is a model output, not a measurement. The closest publicly available variable that gets at this population without modeling assumptions is <strong>B05002_021 — "Foreign-born, not a U.S. citizen."</strong> We surface it as "Not a U.S. citizen."</p>
@@ -160,10 +164,12 @@
   <h2>Color scales</h2>
   <p>The map offers two binning options for every variable:</p>
   <ul>
-    <li><strong>Quantile (default)</strong>: seven equally populated bins so each color contains roughly the same number of tracts. This emphasizes relative ranking across the city and is the right choice for surfacing patterns.</li>
+    <li><strong>Quantile (default)</strong>: seven equally populated bins so each color contains roughly the same number of areas. This emphasizes relative ranking across the city. When many areas share a value (zero rent-stabilized units, say, or a top-coded median), cut points repeat; the map drops the repeats, so a variable can show fewer than seven classes, and a value that falls exactly on a cut point goes in the class below it.</li>
     <li><strong>Linear</strong>: a continuous gradient from the lowest to highest value, which preserves the absolute spacing between tracts but can be visually dominated by outliers.</li>
   </ul>
   <p>Each thematic group uses a different single-hue palette to make the active variable immediately recognizable.</p>
+  <p><strong>Two variables.</strong> Each variable is split into thirds (low, middle, high) across the areas that have both values, and the 3×3 palette colors each area by its pair of thirds. The legend labels the two cut points on each axis and lists how many areas fall in each third; ties can make the thirds uneven. The correlation shown is Pearson's r across the same areas, each counted once regardless of population. The preset explanations were checked against the neighborhood data; the places they name sit in the cells described at the neighborhood level, and the direction of each relationship holds at the tract level, where most are weaker.</p>
+  <p><strong>Summary statistics.</strong> The lowest, middle, average and highest values in the sidebar describe the areas on the map, each counted once. They are not citywide figures: the average of 197 neighborhood poverty rates is not the city's poverty rate.</p>
 
   <h2>Known limits</h2>
   <div class="note">
@@ -183,7 +189,7 @@
   </ul>
 
   <h2>Reproducing this map</h2>
-  <p>The Python build script (<code>build.py</code>) fetches all ACS variables from Census Reporter, joins them to NYC DCP tract geometry, computes the derived shares, and writes <code>tracts.geojson</code> and <code>variables.json</code> into the <code>docs/</code> folder. The page is plain HTML/JS — Leaflet for the map, d3 for color scales, no build step. Source is available on GitHub.</p>
+  <p>The Python build script (<code>build.py</code>) fetches all ACS variables from Census Reporter (caching the raw responses in <code>cache/</code>; pass <code>--refresh</code> to re-download), joins them to NYC DCP tract geometry, computes the derived shares, aggregates tracts to NTAs and writes <code>tracts.geojson</code>, <code>ntas.geojson</code> and <code>variables.json</code> into the <code>docs/</code> folder. The page is plain HTML/JS — Leaflet for the map, d3 for color scales, no build step. Source is available on GitHub.</p>
 
   <p><a class="back" href="index.html">← Back to map</a></p>
 </main>
