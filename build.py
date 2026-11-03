@@ -974,7 +974,7 @@ VARS = [
     ("Origin & language", "pct_foreign_born", "Foreign-born", "pct", "%",
      "Share of residents born outside the United States, not counting those born abroad to American parents (who Census classifies as native)."),
     ("Origin & language", "pct_non_citizen", "Not a U.S. citizen", "pct", "%",
-     "Share of residents who are foreign-born and have not naturalized — the closest publicly available proxy for the undocumented population, but it OVER-counts that population. It includes lawful permanent residents (green-card holders), visa holders (students, H-1B, etc.), refugees, asylees, and TPS recipients. Nationally, Pew estimates 27% of foreign-born residents were unauthorized in 2023; in New York City, the Center for Migration Studies estimates 535,000 undocumented residents in 2023, about 15% of the foreign-born and roughly two-fifths of non-citizens. See methodology for the full caveat."),
+     "Share of residents who are foreign-born and have not naturalized — the closest publicly available proxy for the undocumented population, but it OVER-counts that population. It includes lawful permanent residents (green-card holders), visa holders (students, H-1B, etc.), refugees, asylees and Temporary Protected Status (TPS) recipients. Nationally, Pew estimates 27% of foreign-born residents were unauthorized in 2023; in New York City, the Center for Migration Studies estimates 535,000 undocumented residents in 2023, about 15% of the foreign-born and roughly two-fifths of non-citizens. See methodology for the full caveat."),
     ("Origin & language", "pct_non_english_home", "Non-English at home", "pct", "%",
      "Share of residents 5+ who speak a language other than English at home."),
 
@@ -1016,7 +1016,7 @@ VARS = [
     ("Housing", "rs_share_of_renters", "Rent-stabilized share of rentals", "pct", "%",
      "Estimated share of renter-occupied units that are rent-stabilized, as of 2024. Numerator: tax-bill-derived stabilized unit count (see methodology — NYC HCR does not publish per-building unit counts directly, so the number is reverse-engineered from each property's Rent Stabilization Fee on its DOF Statement of Account). Denominator: ACS 2020-24 renter-occupied units. Clipped at 100%."),
     ("Housing", "rs_units_2024", "Rent-stabilized units (count)", "int", "units",
-     "Estimated rent-stabilized apartments in 2024. Derived from per-building Rent Stabilization Fees on NYC Department of Finance tax bills — there is no official DHCR per-building unit publication. Citywide total (~994k) is consistent with the roughly one million stabilized units the Rent Guidelines Board reports. See methodology for full caveats."),
+     "Estimated rent-stabilized apartments in 2024. Derived from per-building Rent Stabilization Fees on New York City Department of Finance tax bills — there is no official DHCR per-building unit publication. Citywide total (~994k) is consistent with the roughly one million stabilized units the Rent Guidelines Board reports. See methodology for full caveats."),
     ("Housing", "rs_buildings", "Rent-stabilized buildings (count)", "int", "buildings",
      "Number of buildings with at least one rent-stabilized unit billed on their 2024 property tax bill. This is the cleaner of the two rent-stabilization metrics — the building list is well-defined, while the per-building unit count is a tax-bill-derived estimate."),
     ("Housing", "rs_density_per_sqmi", "Rent-stabilized unit density", "num1", "units/sq mi",
@@ -1026,9 +1026,9 @@ VARS = [
     ("Crime (rolling 12 mo.)", "crime_total_rate", "Major-felony rate", "num1", "per 1,000 residents",
      "All seven major felonies — murder, rape, robbery, felony assault, burglary, grand larceny, grand larceny of motor vehicle — per 1,000 residents over the most recent 12 months (NYPD). Complaints NYPD logs at the precinct station house (4% of them, including nearly every rape) have no street location and are left out. Denominator is residential population, so areas with few residents but heavy daytime or visitor traffic (Midtown, FiDi, Times Square, the parks, transit hubs) show inflated rates that reflect crimes against commuters and visitors, not residents."),
     ("Crime (rolling 12 mo.)", "crime_violent_rate", "Violent-crime rate", "num1", "per 1,000 residents",
-     "Murder, rape, robbery, and felony assault per 1,000 residents over the most recent 12 months (NYPD). Complaints NYPD logs at the precinct station house, which include nearly every rape (to protect victims), have no street location and are left out, so in practice this rate counts very few rapes. Same residential-denominator caveat as the major-felony rate: commercial and transit-hub areas can look extreme because few people live there."),
+     "Murder, rape, robbery and felony assault per 1,000 residents over the most recent 12 months (NYPD). Complaints NYPD logs at the precinct station house, which include nearly every rape (to protect victims), have no street location and are left out, so in practice this rate counts very few rapes. Same residential-denominator caveat as the major-felony rate: commercial and transit-hub areas can look extreme because few people live there."),
     ("Crime (rolling 12 mo.)", "crime_property_rate", "Property-crime rate", "num1", "per 1,000 residents",
-     "Burglary, grand larceny, and grand larceny of motor vehicle per 1,000 residents over the most recent 12 months (NYPD). Complaints NYPD logs at the precinct station house, without a street location, are left out. Same residential-denominator caveat: in commercial-heavy areas the rate captures crimes against businesses and visitors as well as residents."),
+     "Burglary, grand larceny and grand larceny of motor vehicle per 1,000 residents over the most recent 12 months (NYPD). Complaints NYPD logs at the precinct station house, without a street location, are left out. Same residential-denominator caveat: in commercial-heavy areas the rate captures crimes against businesses and visitors as well as residents."),
 
     # --- 8. Education ---
     # Ordered low → high attainment.
@@ -1037,7 +1037,7 @@ VARS = [
     ("Education", "pct_bachelor_plus", "Bachelor's degree or higher", "pct", "%",
      "Share of residents 25+ holding at least a bachelor's degree."),
     ("Education", "pct_graduate_degree", "Graduate or professional degree", "pct", "%",
-     "Share of residents 25+ whose highest credential is a master's degree, professional school degree (JD, MD, etc.), or doctorate. A subset of the 'Bachelor's degree or higher' variable above."),
+     "Share of residents 25+ whose highest credential is a master's degree, professional school degree (JD, MD, etc.) or doctorate. A subset of the 'Bachelor's degree or higher' variable above."),
 
     # --- 9. Schools (K-12) — pairs naturally with Education ---
     # Total count first, then share by residence, then location-based count.
