@@ -1014,7 +1014,7 @@ VARS = [
     ("Housing", "median_rent_burden", "Median rent burden", "pct", "%",
      "Median gross rent as a percentage of household income in the past 12 months, among renter households for whom it can be computed (ACS B25071)."),
     ("Housing", "rs_share_of_renters", "Rent-stabilized share of rentals", "pct", "%",
-     "Estimated share of renter-occupied units that are rent-stabilized, as of 2024. Numerator: tax-bill-derived stabilized unit count (see methodology — NYC HCR does not publish per-building unit counts directly, so the number is reverse-engineered from each property's Rent Stabilization Fee on its DOF Statement of Account). Denominator: ACS 2020-24 renter-occupied units. Clipped at 100%."),
+     "Estimated share of renter-occupied units that are rent-stabilized, as of 2024. Numerator: tax-bill-derived stabilized unit count (see methodology — New York State Homes and Community Renewal does not publish per-building unit counts directly, so the number is reverse-engineered from each property's Rent Stabilization Fee on its DOF Statement of Account). Denominator: ACS 2020-24 renter-occupied units. Clipped at 100%."),
     ("Housing", "rs_units_2024", "Rent-stabilized units (count)", "int", "units",
      "Estimated rent-stabilized apartments in 2024. Derived from per-building Rent Stabilization Fees on New York City Department of Finance tax bills — there is no official DHCR per-building unit publication. Citywide total (~994k) is consistent with the roughly one million stabilized units the Rent Guidelines Board reports. See methodology for full caveats."),
     ("Housing", "rs_buildings", "Rent-stabilized buildings (count)", "int", "buildings",
